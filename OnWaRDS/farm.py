@@ -12,6 +12,7 @@ from .turbine   import Turbine
 from .airfoil   import Airfoil
 from .lagSolver import LagSolver 
 from .disp.viz  import Viz
+from .utils     import LoggingDict
 
 if TYPE_CHECKING:
     from typing import List
@@ -27,6 +28,12 @@ class Farm:
                         wt_cherry_picking: list=None, out_dir: str=None):
 
         self.data_dir = data_dir
+
+        # Casting all input dictionaries
+        snrs_args  = LoggingDict(snrs_args)
+        est_args   = LoggingDict(est_args)
+        model_args = LoggingDict(model_args)
+        grid_args  = LoggingDict(grid_args)
 
         # Farm geometry
         lg.info(f'Loading data from {data_dir}')

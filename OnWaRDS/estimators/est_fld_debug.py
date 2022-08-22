@@ -22,10 +22,10 @@ class Est_fld_debug(Estimator):
         for i, s in enumerate(self.states):
 
             self.wt.states['u_inc'] = 8
-            self.wt.states['u_fs'] = 8
+            self.wt.states['u_fs']  = 8
             self.wt.states['w_inc'] = np.sin(self.wt.snrs.get_buffer_data('time')/100)
-            self.wt.states['w_fs'] = np.sin(self.wt.snrs.get_buffer_data('time')/100)
-            self.wt.states['ct'] = 0.8
-            self.wt.states['ti'] = 0.1
-            self.wt.states['yaw'] = 0
+            self.wt.states['w_fs']  = np.sin(self.wt.snrs.get_buffer_data('time')/100)
+            self.wt.states['ct']    = 0.8
+            self.wt.states['ti']    = 0.1
+            self.wt.states['yaw']   = 0
 

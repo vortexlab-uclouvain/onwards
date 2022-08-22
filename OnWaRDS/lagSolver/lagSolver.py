@@ -1,5 +1,4 @@
 from __future__ import annotations
-from inspect import ismethoddescriptor
 from typing import TYPE_CHECKING
 
 import logging

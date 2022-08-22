@@ -8,7 +8,8 @@ lg = logging.getLogger(__name__)
 
 import numpy as np
 
-from . import estimators 
+from .      import estimators 
+from .utils import LoggingDict
  
 if TYPE_CHECKING:
     from typing  import List
@@ -32,7 +33,7 @@ class Turbine:
         farm : Farm
             parent farm
         i_wt : int
-            index of the wind turbine (in the python `farm` object)
+            index of the wind turbine
         snrs_args : dict
             dict containing the sensor parameters (cfr: sensor). `Sensors` 
             type retrieved from snrs_args['type']
@@ -162,6 +163,7 @@ class Turbine:
             else:
                 raise ValueError(f'Estimator type `{e_type}` not recognized.')
             
+            est_args[key] = LoggingDict(est_args[key])
             self.estimators.append(Estimator(self, avail_states, est_args[key]))
             avail_states += [s for s in self.estimators[-1].states]
         
