@@ -1,0 +1,11 @@
+# VS code
+.vscode
+
+# compiled files
+__pycache__
+*.pyc
+*.o
+*.so
+
+# OnWaRDS file
+.runid
