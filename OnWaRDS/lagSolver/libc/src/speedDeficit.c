@@ -279,43 +279,39 @@ void ueff_xyz(LagSolver *wf, double *x_vec, double *u, double *du) {
 }
 /* -- end ueff_xyz ---------------------------------------------------------- */
 
-double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor, int exp) {
-    // x_c_vec_rotor as [x,z,y]
+int    N_INT     =  16;
+double R_INT[16] = {0.4597008433809831, 0.8880738339771151, 0.4597008433809831, 0.8880738339771151, 0.4597008433809831, 0.8880738339771151, 0.4597008433809831, 0.8880738339771151, 0.4597008433809831, 0.8880738339771151, 0.4597008433809831, 0.8880738339771151, 0.4597008433809831, 0.8880738339771151, 0.4597008433809831, 0.8880738339771151};
+double T_INT[16] = {0.0000000000000000, 0.3926990816987241, 0.7853981633974483, 1.1780972450961724, 1.5707963267948966, 1.9634954084936207, 2.356194490192345, 2.748893571891069, 3.141592653589793, 3.5342917352885173, 3.9269908169872414, 4.319689898685965, 4.71238898038469, 5.105088062083414, 5.497787143782138, 5.890486225480862};
+double W_INT[16] = {0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625};
 
-    int i, j, n_r, n_theta;
+double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor) {
+
+    int i;
 
     double *u      = VEC(2);
     double *du     = VEC(2);
     double *x_eval = VEC(3);
     
     double sum = 0.0;
-    double r, theta, dr, dtheta;
+    double r;
 
-    n_r     = 16; 
-    dr      = r_rotor/n_r;
-    n_theta = 16;
-    dtheta  = 2*PI/n_theta;
+    for (i = 0; i < N_INT; i++) {
+        r = R_INT[i]*r_rotor;
 
-    for (i = 0; i < n_r; i++) {
-        for (j = 0; j < n_theta; j++) {
-            r     = (i+.5)*dr;
-            theta = (j+.5)*dtheta;
+        x_eval[0] = x_c_vec_rotor[0] ;
+        x_eval[1] = x_c_vec_rotor[2] + r*cos(T_INT[i]);
+        x_eval[2] = x_c_vec_rotor[1] + r*sin(T_INT[i]);
+        
+        ueff_xyz(wf, x_eval, u, du);
 
-            x_eval[0] = x_c_vec_rotor[0] ;
-            x_eval[1] = x_c_vec_rotor[2] + r*cos(theta);
-            x_eval[2] = x_c_vec_rotor[1] + r*sin(theta);
-            
-            ueff_xyz(wf, x_eval, u, du);
-
-            sum +=  pow(u[0],exp) * r * dr * dtheta;
-        }
+        sum +=  u[0] * W_INT[i];
     }
 
     free(u);
     free(du);
     free(x_eval);
 
-    return sum/(PI*r_rotor*r_rotor);
+    return sum;
 
 }
 /* -- end rews_compute ------------------------------------------------------ */

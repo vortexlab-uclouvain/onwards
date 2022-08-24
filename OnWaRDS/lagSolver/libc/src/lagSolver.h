@@ -248,5 +248,6 @@ void du_part_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du
 void du_part_compute_from_wm(WakeModel *wm, double *x, double *du_interp, double ravg);
 void regularize_WakeModel(WakeModel *wm);
 void du_ravg_pos_compute_from_wf(LagSolver *wf, double *x, double *du_interp, double ravg);
+double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor);
 
 #endif // _LagSolver_H_

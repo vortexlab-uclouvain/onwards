@@ -160,8 +160,8 @@ class LagSolver():
         return du_vec.x
         # -------------------------------------------------------------------- #
 
-    # def rews_compute(self, x_rotor, r_rotor, exp=1):
-    #     x_cast = np.array([x_rotor[0],x_rotor[2],x_rotor[1]+self.farm.zero_origin[1]])
-    #     x = py_comm.Vec(x_cast)
-    #     return py_comm.cLib.rews_compute(self._p_wm_c, x.p, r_rotor,exp)
-    #     # -------------------------------------------------------------------- #
+    def rews_compute(self, x_rotor, r_rotor):
+        x_cast = np.array([x_rotor[0],x_rotor[1],x_rotor[2]])
+        x = py_comm.Vec(x_cast)
+        return py_comm.cLib.rews_compute(self.p, x.p, r_rotor)
+        # -------------------------------------------------------------------- #
