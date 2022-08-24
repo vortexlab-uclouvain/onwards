@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import logging
-
 lg = logging.getLogger(__name__)
 
 import os
@@ -219,7 +218,7 @@ class VelField_plot(Viz):
     def update(self):
         if not self.farm.update_LagSolver_flag: return
 
-        self.time = self.farm.it
+        self.time = self.farm.t
         time_adim = 100000#self.time/self.farm.af.D*self.farm.u_h
         if not self.plot_overide:
             plt.figure(self.fig.number)

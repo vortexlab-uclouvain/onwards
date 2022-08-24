@@ -2,8 +2,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import logging
-
-from OnWaRDS import farm
 lg = logging.getLogger(__name__)
 
 import numpy as np
@@ -25,15 +23,14 @@ class Turbine:
     est_export : estimators.StateExportBuffer
 
     def __init__(self, farm: Farm, i_wt: int, snrs_args: dict, est_args:list):
-        """
-        Inits Turbine
+        """ Inits Turbine
 
         Parameters
         ----------
         farm : Farm
             parent farm
         i_wt : int
-            index of the wind turbine
+            index of the wind turbine (in the `farm` object)
         snrs_args : dict
             dict containing the sensor parameters (cfr: sensor). `Sensors` 
             type retrieved from snrs_args['type']
@@ -56,10 +53,10 @@ class Turbine:
         # -------------------------------------------------------------------- #
 
     def __init_sensors__(self, snrs_args: dict):
-        """
-        Inits the Turbine's Sensors
-            Sensors allow to access some measurement `m` at the current time `t`
-            using the get_buffer_data('m') method
+        """ Inits the Turbine's Sensors
+
+        Sensors allow to access some measurement m at the current time t
+        using the get_buffer_data('m') method
 
         Parameters
         ----------
@@ -79,7 +76,7 @@ class Turbine:
         Note
         ----
         Custom Sensors can be defined by the user following the example provided 
-        hereunder
+        hereunder for MySensors
         """
         if   snrs_args['type']=='SensorsPy':
             from .sensor import SensorsPy
@@ -110,10 +107,10 @@ class Turbine:
         # -------------------------------------------------------------------- #
 
     def __init_states__(self, est_args: dict):
-        """
-        Inits the Turbine's Estimators
-            Estimators allows to translate the wind measurements into the actual 
-            wind turbine states (used as part of the wake model computation).
+        """ Inits the Turbine's Estimators
+        
+        Estimators allows to translate the wind measurements into the actual 
+        wind turbine states (used as part of the wake model computation).
 
         Parameters
         ----------
@@ -183,7 +180,8 @@ class Turbine:
             self.est_export = estimators.StateExportBuffer(self, 
                                               est_args['export'], 
                                               export_dir=est_args['export_dir'],
-                                              export_overwrite=est_args.get('export_overwrite',False))
+                                              export_overwrite=est_args.get('export_overwrite',False),
+                                              states_user=est_args.get('export_user_field',[]))
         else:
             self.est_export = False
 
