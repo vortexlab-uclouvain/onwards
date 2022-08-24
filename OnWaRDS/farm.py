@@ -25,7 +25,7 @@ class Farm:
 
     def __init__(self, data_dir: str, af_name: str, snrs_args: dict,
                         est_args: dict, model_args: dict, grid_args: dict={}, 
-                        wt_cherry_picking: list=None, out_dir: str=None):
+                        wt_cherry_picking: List[int]=None, out_dir: str=None):
 
         self.data_dir = data_dir
 
@@ -81,11 +81,13 @@ class Farm:
     def viz_add(self, type: str, *args, **kwargs):
         _type = type.lower()
         if   _type == 'part':
-            from .disp.part_plot       import Part_plot     as Viz
+            from .disp.part_plot       import Part_plot          as Viz
         elif _type == 'velfield':
-            from .disp.velField_plot   import VelField_plot as Viz
+            from .disp.velField_plot   import VelField_plot      as Viz
         elif _type == 'wakecenterline_xloc':
             from .disp.centerline_plot import WakeCenterlineXloc as Viz
+        elif _type == 'rews':
+            from .disp.rews_plot       import REWS_plot          as Viz
         else:
             raise Exception(f'Viz type {type} not recognized.')
 
@@ -131,6 +133,10 @@ class Farm:
 
     def __iter__(self):
         return self
+        # -------------------------------------------------------------------- #
+
+    def __len__(self):
+        return min( len(wt.snrs) for wt in self.wts )
         # -------------------------------------------------------------------- #
 
     def __next__(self):
