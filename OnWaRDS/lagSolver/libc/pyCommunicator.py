@@ -220,5 +220,5 @@ cLib.free_LagSolver.argtypes = [c_LagSolver_p]
 cLib.free_LagSolver.restype  = None
 
 cLib.rews_compute.argtypes = [c_LagSolver_p, c_double_p, c_double]
-# cLib.rews_compute.restype  = c_double
+cLib.rews_compute.restype  = c_double
 # ---------------------------------------------------------------------------- #

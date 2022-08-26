@@ -1,7 +1,11 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from copyreg import pickle
+from random import randrange
+from typing import TYPE_CHECKING, List
 
 import logging
+
+from OnWaRDS import farm
 lg = logging.getLogger(__name__)
 
 import numpy as np
@@ -10,95 +14,127 @@ import matplotlib.pyplot as plt
 from .viz import Viz
 from . import linespecs as ls
 if TYPE_CHECKING:
+    from typing           import List
     from ..farm           import Farm
-    from ..lagSolver.grid import Grid
+    from ..turbine        import Turbine
 
 class REWS_plot(Viz):
     farm: Farm
-    grid: Grid
 
-    def __init__(self, farm, *args, **kwargs):
+    def __init__(self, farm: Farm, t_ref:List(float), u_ref:List(float), 
+                x_interp:List(float), fs_flag:bool=False, wt:Turbine=None, 
+                xlim:List[float]=None, ylim:List[float]=None, 
+                u_norm:float=None):
         super().__init__(farm)
-        self.t_f3 = np.ones( len( farm ) ) *np.nan
-        self.u_f3 = np.ones( len( farm ) ) *np.nan
 
-        self.fs_flag = kwargs.get('fs',False)
-        self.exp = kwargs.get('exp',1)
+        # Data initialisation
+        self.t_mod = np.ones( len( farm ) ) *np.nan
+        self.u_mod = np.ones( len( farm ) ) *np.nan
+
+        self.fs_flag=fs_flag
         if self.fs_flag:
-            self.u_f3_fs = np.ones(len(farm))*np.nan
+            self.u_mod_fs = np.ones(len(farm))*np.nan
 
-        self.ylabel = r'$\frac{u_{RE}}{u_H}$'
-        if len(args)==1:
-            self.wt   = farm.wts[farm.i2ibf(args[0])]
-            self.t_bf = self.t_f3
-            self.u_bf = np.ones(len(farm))*np.nan
-            self.x    = self.wt.x
-            self.x[0] -= 1
-            self.title  = f'$WT${args[0]}'
-            if self.exp==1: raise ValueError('exp not compatible with WT format')
-        elif len(args)==3:
-            self.wt = False
-            self.t_bf, self.u_bf, self.x = args
-            self.ylabel = r'$\frac{u_{RE}}{u_H}$'
-            self.title  = f'[ $x = {self.x[0]}D$;  $z = {self.x[2]}D$ ]'
-        else:
-            raise TypeError('Inconsistent number of arguments')
+        self.t_ref = t_ref
+        self.u_ref = u_ref
 
-        if 'filt' in kwargs: self.filt = 1/kwargs['filt']
-        else:                self.filt = False
+        # Mask center computation
+        self.x_interp = x_interp
+        self.wt       = wt
+        if wt:
+            self.x_interp += wt.x
+            
+        self.xlim   = xlim
+        self.ylim   = ylim
+        self.u_norm = u_norm or farm.af.D 
+
         self._it = 0
 
         # -------------------------------------------------------------------- #
     def update(self):
         if self.farm.update_LagSolver_flag:
-            self.t_f3[self._it] = self.farm.t
-            self.u_f3[self._it] = self.farm.lag_solver.rews_compute(self.x, self.farm.af.R)
+            self.t_mod[self._it] = self.farm.t
+            self.u_mod[self._it] = self.farm.lag_solver.rews_compute(self.x_interp, self.farm.af.R)
             if self.fs_flag:
-                self.u_f3_fs[self._it] = self.farm.lag_solver.interp_FlowModel(
-                                                                    np.array([self.x[0]]), 
-                                                                    np.array([self.x[2]]), 
+                self.u_mod_fs[self._it] = self.farm.lag_solver.interp_FlowModel(
+                                                                    np.array([self.x_interp[0]]), 
+                                                                    np.array([self.x_interp[2]]), 
                                                                     filt='flow')[0]
-            if self.wt:
-                self.u_bf[self._it] = self.wt.flow_est.inst_state['u']
             self._it += 1
         # -------------------------------------------------------------------- #
+    
+    def __lt__(self, other):
+        return self.x_interp[0] < other.x_interp[0]
+        # -------------------------------------------------------------------- #
+    
+    def __gt__(self, other):
+        return other.x_interp[0] < self.x_interp[0]
+        # -------------------------------------------------------------------- #
 
+    def export(self):
+        if self.wt:
+            dx = self.x_interp[0] - self.wt.x[0] 
+            str_id = f'wt{self.wt.i_bf}_{dx}'
+        else:
+            str_id = f'{self.x_interp[0]:.0f}_{self.x_interp[1]:.0f}_{self.x_interp[2]:.0f}'
+
+        np.save(f'{self.farm.out_dir}/rews_{str_id}.npy', 
+                {'t_mod':self.t_mod, 'u_mod':self.u_mod,
+                                    't_ref':self.t_ref, 'u_ref':self.u_ref},
+                allow_pickle=True)
     def plot(self):
-        plt.figure(figsize=(9,3))
+        self.export()
+        if self._it == -1: return
 
-        if self.filt:
-            fs = 1/(self.t_f3[1]-self.t_f3[0])
-            filt_f3 = signal.butter(5, self.filt / (fs / 2), 'low')
+        normx = lambda _x: (_x)/(self.farm.af.D/self.u_norm)
 
-            fs = 1/(self.t_bf[1]-self.t_bf[0])
-            filt_bf = signal.butter(5, self.filt / (fs / 2), 'low')
+        # Gather all REWS_plot objects
+        viz_rews_all = [v for v in self.farm.viz if isinstance(v, REWS_plot)]
 
-            self.u_f3    = signal.filtfilt(*filt_f3, self.u_f3)
-            self.u_bf    = signal.filtfilt(*filt_bf, self.u_bf)
-            if self.fs_flag:
-                self.u_f3_fs = signal.filtfilt(*filt_f3, self.u_f3_fs)
+        # Gather and sort REWS_plot linked to a WT
+        viz_rews_wt = [[] for _ in range(self.farm.n_wts)]
+        for v in list(viz_rews_all):
+            for i_wt, wt in enumerate(self.farm.wts):
+                if wt==v.wt: 
+                    viz_rews_wt[i_wt].append(v)
+                    viz_rews_all.remove(v)
 
-        plt.plot(self.t_f3, self.u_f3, **ls.MOD) 
-        if self.fs_flag:
-            plt.plot(self.t_f3, self.u_f3_fs, **ls.MOD | {'linestyle':'--'}) 
-        plt.plot(self.t_bf, self.u_bf, **ls.REF) 
-
-        # plt.ylim([0.4, 1.2])
-        plt.xlim([self.t_f3[0], self.t_f3[np.isnan(self.t_f3)==False][-1]])
-        plt.xlabel(r'$\frac{t}{T_{\mathrm{conv}}}$')
-        plt.ylabel(self.ylabel, rotation=0)
-        plt.title(self.title)
-
-        plt.tight_layout()
-        buffer = f'wt{self.wt.i_bf}' if self.wt else ''
-
-        # fid_tmpl = f'{self.farm.glob_set["log_dir"]}/rews_u{self.exp}_{buffer}x{(self.x[0]+self.farm.zero_origin[0]):0.0f}z{(self.x[2]+self.farm.zero_origin[2]):0.0f}'
-
-        # np.save(f'{fid_tmpl}_u_f3.npy',   self.u_f3   )
-        # np.save(f'{fid_tmpl}_u_bf.npy',   self.u_bf   )
-        # np.save(f'{fid_tmpl}_t_f3.npy',   self.t_f3   )
-        # np.save(f'{fid_tmpl}_t_bf.npy',   self.t_bf   )
-        # np.save(f'{fid_tmpl}_u_f3_fs.npy',self.u_f3_fs)        
+        for i in range(self.farm.n_wts):
+            viz_rews_wt[i].sort()   
         
-        # plt.savefig(f'{fid_tmpl}.eps')
+        # Plotting REWS_plot linked to a WT
+        for i_wt, v_wt in enumerate(viz_rews_wt):
+            i_wt_bf = self.farm.wts[i_wt].i_bf
+            _, axs = plt.subplots(len(v_wt), 1, sharex=True, figsize=(8,8))
+
+            for ax, v in zip(axs, v_wt):
+                plt.sca(ax)
+                plt.plot(v.t_ref ,v.u_ref, **ls.MOD)
+                plt.plot(v.t_mod[:v._it] ,v.u_mod[:v._it], **ls.REF)
+                if v.fs_flag:
+                    plt.plot(v.t_mod[:v._it] ,v.u_mod_fs[:v._it], **ls.MOD | {'linestyle':'--'}) 
+
+                dx = v.x_interp[0] - v.wt.x[0] 
+                plt.ylabel(r'$\frac{1}{U_{ABL}}u_{RE}(t,'+f'{dx/v.farm.af.D:.1f}'+r'D)$')
+
+                plt.xlim(v.xlim or normx(v.t_mod[:v._it][[0,-1]]))
+                if v.ylim: plt.ylim(v.ylim)
+
+                ax_last = ax
+
+            plt.suptitle(f'WT{i_wt}')
+
+            ax_last.set_xlabel(r't [s]' if self.u_norm is None else r'$\frac{t}{T_C}$') 
+            ax_last.xaxis.set_tick_params(labelbottom=True)
+
+            plt.tight_layout()
+            plt.subplots_adjust(left=0.12, right=0.99, hspace=0.1)
+
+            plt.savefig(f'{self.farm.out_dir}/rews_wt{i_wt_bf}.pdf')
+
+        for v_wt in viz_rews_all:
+            raise NotImplementedError('plot not implement if no parent turbine selected.')
+
+        for v in self.farm.viz:
+            if isinstance(v, REWS_plot): v._it = -1
         # -------------------------------------------------------------------- #

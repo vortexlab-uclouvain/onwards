@@ -88,6 +88,8 @@ class Farm:
             from .disp.centerline_plot import WakeCenterlineXloc as Viz
         elif _type == 'rews':
             from .disp.rews_plot       import REWS_plot          as Viz
+        elif _type == 'estimator':
+            from .disp.estimator_plot  import Estimator_plot     as Viz
         else:
             raise Exception(f'Viz type {type} not recognized.')
 
