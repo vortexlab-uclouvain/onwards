@@ -1,6 +1,7 @@
 import logging
 lg = logging.getLogger(__name__)
 
+import os
 import ctypes
 import numpy as np
 
@@ -11,9 +12,7 @@ c_double_pp = POINTER(c_double_p)
 from ...airfoil import c_Airfoil_p
 from ...turbine import MINIMAL_STATES, Turbine
 
-# cLib = ctypes.CDLL(os.environ['WAKEFARM_PATH']+'/wakeFarm/lagSolver/libc/lagSolver.so') 
-cLib = ctypes.CDLL('/Users/lejeunemax/Desktop/F3/OnWaRDS/lagSolver/libc/lagSolver.so') 
-
+cLib = ctypes.CDLL(os.environ['ONWARDS_PATH']+'/OnWaRDS/lagSolver/libc/lagSolver.so') 
 # ---------------------------------------------------------------------------- #
 
 class Vec():
