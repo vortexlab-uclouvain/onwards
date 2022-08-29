@@ -60,7 +60,7 @@ class LagSolver():
         self.set.setdefault( 'sd_type',  0  )
         self.set.setdefault( 'ak',    0.25  )
         self.set.setdefault( 'bk',    0.5   )
-        self.set.setdefault( 'ceps',  0.125 )
+        self.set.setdefault( 'ceps',  0.25 )
 
         self._set_c_ = py_comm.c_Set(self.set)  
         self.p       = py_comm.cLib.init_LagSolver(self.farm.n_wts, self._set_c_)
