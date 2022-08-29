@@ -25,7 +25,9 @@ class VelField_plot(Viz):
                  mp4_export:bool=True, skip:int=1, t_start:float=False, 
                  skeleton: bool=False, slice_export: bool=False,
                  plot_overide: bool=False, du_export: bool=False,):
-
+        
+        if not self.grid: raise Exception('Grid should be enabled for VelField_plot.')
+        
         super().__init__(farm)
         self.vel_bnds     = vel_bnds
         self.out_dir      = self.farm.out_dir
