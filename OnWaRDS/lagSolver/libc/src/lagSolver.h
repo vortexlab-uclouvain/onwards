@@ -67,6 +67,8 @@ typedef struct {
 /* -------------------------------------------------------------------------- */
 
 typedef struct {
+    int type;
+
     // Work variables
     int n_wv_; 
     double **wv_; 
@@ -187,13 +189,14 @@ void free_FlowModel(FlowModel *fm);
 WakeModel* init_WakeModel(LagSolver *wf, WindTurbine *wt);
 void free_WakeModel(WakeModel *fm);
 
+SpeedDeficit* init_SpeedDeficit(WakeModel *wm);
+void free_SpeedDeficit(SpeedDeficit *sd);
+
+// Flow and Wake Model getters
 FlowModel* get_FlowModel(LagSolver *wf, WindTurbine *wt);
 WakeModel* get_WakeModel(LagSolver *wf, WindTurbine *wt);
 
-void free_SpeedDeficit(SpeedDeficit *sd);
-
-// SpeedDeficit* init_SpeedDeficit(LagSolver *wf, WindTurbine *wt);
-
+// Wind turbines function
 void add_WindTurbine(LagSolver *wf, WindTurbine *wt);
 void is_freestream(LagSolver *wf,  WindTurbine *wt);
 int is_waked_by(WakeModel *wm, WindTurbine *wt);
@@ -206,48 +209,45 @@ void update_WakeModel(WakeModel *wm);
 void shed_vel_particle(FlowModel *fm, int i);
 void shed_wake_particle(WakeModel *wm, int i);
 
-// Flow Model interpolation
-void interp_rotor_FlowModel(LagSolver *wf, double *x, double t, double *u_interp, int i_wt_exclude);
-
-// Speed deficit interpolation
-double du_compute_r0_from_sd(SpeedDeficit *sd, double xi);
-double du_compute_r0avg_from_sd(SpeedDeficit *sd, double xi, double ravg);
-double du_compute_from_sd(SpeedDeficit *sd, double xi, double r);
-void du_pos_compute_from_wf(LagSolver *wf, double *x, double *du_interp, double (*proj)(WakeModel*, double, double*));
-void du2_pos_compute_from_wm(WakeModel *wm, double *x, double *du_interp, double (*proj)(WakeModel*, double, double*));
-
-void du_pos2d_compute_from_wf(LagSolver *wf, double *x, double *du_interp);
-void du_pos3d_compute_from_wf(LagSolver *wf, double *x, double *du_interp);
-void du2_pos2d_compute_from_wm(WakeModel *wm, double *x, double *du_interp);
-void du_compute_FlowModel(LagSolver *wf, double *x, double *du_interp, double ravg);
-void du2_tmp(WakeModel *wm, double *x, double *du_interp, double ravg);
+// Flow particle interpolation
+void project_particle_frame_FlowModel(FlowModel *fm, int i, double *x, double *xi, double *r);
+double compute_weight_FlowModel_all(LagSolver *wf, double *x, double* sigma, int i_wt_exclude);
+double compute_weight_FlowModel(FlowModel *fm, double *x, double* sigma);
+void interp_FlowModel_all(LagSolver *fm, double *x, double t, double* sigma, double *u_interp, int i_wt_exclude);
 
 // Wake particle interpolation
+void project_particle_frame_WakeModel(WakeModel *wm, int i_p, double *x, double *xi, double *r, int side);
 double side_wake_particle(WakeModel *wm, int i_p, double *x);
 int is_interp_wake_particle(WakeModel *wm, int i_p, double *x, double *side);
 int interp_wake_particle(WakeModel *wm, int i_p, int *idx, double *widx, double *side);
 int find_wake_particle(WakeModel *wm, double *x, int *idx, double *w);
-void project_particle_frame(WakeModel *wm, int i_p, double *x, double *xi, double *r, int side);
 
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+// Speed Deficit interpolation
+void regularize_WakeModel(WakeModel *wm);
 
-FlowModel* init_FlowModel(LagSolver *wf, WindTurbine *wt);
-void free_FlowModel(FlowModel *fm);
-void update_FlowModel(FlowModel *fm);
-void project_particle_frame_FlowModel(FlowModel *fm, int i, double *x, double *xi, double *r);
-double compute_weight_FlowModel(FlowModel *fm, double *x, double* sigma);
-double compute_weight_FlowModel_all(LagSolver *wf, double *x, double* sigma, int i_wt_exclude);
-void interp_FlowModel_all(LagSolver *fm, double *x, double t, double* sigma, double *u_interp, int i_wt_exclude);
-void shed_vel_particle(FlowModel *fm, int i);
-SpeedDeficit* init_SpeedDeficit(WakeModel *wm);
-void update_BPA(WakeModel *wm, int i);
+void du_pos_compute_from_wf(LagSolver *wf, double *x, double *du_interp, 
+                                   double (*proj)(WakeModel*, double, double*));
+void du2_pos_compute_from_wm(WakeModel *wm, double *x, double *du_interp, 
+                                   double (*proj)(WakeModel*, double, double*));
+
+void du_pos2d_compute_from_wf(LagSolver *wf, double *x, double *du_interp);
+void du_pos3d_compute_from_wf(LagSolver *wf, double *x, double *du_interp);
+
+void du_part_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp);
+void du_part_compute_from_wm(WakeModel *wm, double *x, double *du_interp, double ravg);
+
+void du_ravg_pos_compute_from_wf(LagSolver *wf, double *x, double *du_interp, double ravg);
+
+double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor);
+
+// # TYPE 1 :  Bastankhah 
+// M. Bastankhah and F. Port ́e-Agel. A new analytical model for wind-turbine wakes.
+// Renewable Energy, 70:116–123, 2014.
 double du_xi_BPA(WakeModel *wm, int i, double xi);
 double du_xi_ravg_BPA(WakeModel *wm, int i, double xi, double ravg);
 double du_xi_r_BPA(WakeModel *wm, int i, double xi, double r);
-void du_part_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp);
-void du_part_compute_from_wm(WakeModel *wm, double *x, double *du_interp, double ravg);
-void regularize_WakeModel(WakeModel *wm);
-void du_ravg_pos_compute_from_wf(LagSolver *wf, double *x, double *du_interp, double ravg);
-double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor);
+void update_BPA(WakeModel *wm, int i);
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 #endif // _LagSolver_H_

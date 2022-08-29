@@ -153,6 +153,7 @@ class Farm:
     def __exit__(self, *args, **kwargs):
         for wt in self.wts: wt.exit()
         for v in self.viz:  v.plot()
+        self.lag_solver.free()
         # -------------------------------------------------------------------- #
 
     def __get_runid__(self):

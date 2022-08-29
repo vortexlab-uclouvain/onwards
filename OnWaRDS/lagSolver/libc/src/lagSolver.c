@@ -27,13 +27,13 @@ LagSolver* init_LagSolver(int n_wt, LagSet *set) {
 void free_LagSolver(LagSolver *wf) { 
     int i_wt;
     for (i_wt = 0; i_wt < wf->n_wt; i_wt++) {
+        // wts[i] is initialized in Python and is handled by ctypes
         FREE(FlowModel, wf->fms[i_wt]);
         FREE(WakeModel, wf->wms[i_wt]);
     }
-    free(wf->wts);
+    // free(wf->wts);
     free(wf->fms);
     free(wf->wms);
-    free(wf);
 };
 /* -- end free_LagSolver ----------------------------------------------------- */
 

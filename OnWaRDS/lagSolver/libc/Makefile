@@ -5,7 +5,6 @@ CFLAGS = -I $(AFL_SRC_PATH) -O3
 CC = gcc
 CCLINK = gcc
 OBJ = lagSolver.o flowModel.o wakeModel.o speedDeficit.o communicator.o
-# OBJ = lagSolver.o flowModel.o wakeModel.o communicator.o
 
 ##################################
 
@@ -14,7 +13,7 @@ _OBJ = $(patsubst %,obj/%,$(OBJ))
 default: display wakeModel.so
 
 display: 
-	# @echo "******** FCube - v3.0 ********"
+	# @echo "******** OnWaRDS - v1.0 ********"
 
 	@echo "  ____    __          __   _____  _____   _____ "
 	@echo " / __ \   \ \        / /  |  __ \|  __ \ / ____|"

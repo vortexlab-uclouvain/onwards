@@ -27,11 +27,11 @@ WakeModel* init_WakeModel(LagSolver *wf, WindTurbine *wt) {
     wm->t_p     = VEC(wm->n);
     wm->xi_p    = VEC(wm->n);
     wm->ct_p    = VEC(wm->n);
-    wm->yaw_p    = VEC(wm->n);
+    wm->yaw_p   = VEC(wm->n);
     wm->ti_p    = VEC(wm->n);
     wm->x_p     = (double**) malloc( sizeof(double*) * wm->n );
-    wm->n_p  = (double**) malloc( sizeof(double*) * wm->n );
-    wm->n2_p = (double**) malloc( sizeof(double*) * wm->n );
+    wm->n_p     = (double**) malloc( sizeof(double*) * wm->n );
+    wm->n2_p    = (double**) malloc( sizeof(double*) * wm->n );
     wm->uinc_p  = (double**) malloc( sizeof(double*) * wm->n );
     
     wm->sd = init_SpeedDeficit(wm);
@@ -76,10 +76,10 @@ WakeModel* init_WakeModel(LagSolver *wf, WindTurbine *wt) {
 void free_WakeModel(WakeModel *wm) {  
     int i;
     for (i = 0; i < wm->n; i++) {
-        free(wm->x_p);
-        free(wm->n_p);
-        free(wm->n2_p);
-        free(wm->uinc_p);
+        free(wm->x_p[i]);
+        free(wm->n_p[i]);
+        free(wm->n2_p[i]);
+        free(wm->uinc_p[i]);
     }
 
     free(wm->t_p);
@@ -91,6 +91,8 @@ void free_WakeModel(WakeModel *wm) {
     free(wm->n2_p);
     free(wm->uinc_p);
     
+    FREE(SpeedDeficit, wm->sd);
+
     // Work variables
     free(wm->idx_);
     free(wm->widx_);
@@ -140,7 +142,6 @@ void update_WakeModel(WakeModel *wm) {
     free(du);
     free(u_t_dt);
 }
-
 /* -- end update_WakeModel -------------------------------------------------- */
 
 /* ------------------------------------------------ */
@@ -261,7 +262,7 @@ void regularize_WakeModel(WakeModel *wm) {
 }
 /* -- end regularize_WakeModel ---------------------------------------------- */
 
-void project_particle_frame(WakeModel *wm, int i_p, double *x, double *xi, double *r, int side) {
+void project_particle_frame_WakeModel(WakeModel *wm, int i_p, double *x, double *xi, double *r, int side) {
     int i, ip;
     double den, wu, wv, uv;
     double *u, *v, *w;
@@ -286,4 +287,4 @@ void project_particle_frame(WakeModel *wm, int i_p, double *x, double *xi, doubl
     *r  = (wu - wv*uv)/den;
     *xi = (wv - wu*uv)/den;
 }
-/* -- end project_particle_frame ------------------------------------------- */
+/* -- end project_particle_frame_WakeModel ------------------------------------------- */

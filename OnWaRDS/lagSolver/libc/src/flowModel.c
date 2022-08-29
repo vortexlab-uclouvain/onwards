@@ -56,7 +56,7 @@ FlowModel* init_FlowModel(LagSolver *wf, WindTurbine *wt) {
 
     // Work variables
 
-    fm->w_shep   = (double*) malloc( sizeof(double) * fm->n );
+    fm->w_shep   = VEC(fm->n);
     fm->bnds     = VEC(4); 
 
     fm->x_p_loc_ = VEC(2); 
@@ -69,12 +69,12 @@ FlowModel* init_FlowModel(LagSolver *wf, WindTurbine *wt) {
 
 void free_FlowModel(FlowModel *fm) {
     int i;
+    
     for (i = 0; i < fm->n; i++) {
         free(fm->x_p[i]);
         free(fm->u_p[i]);
         free(fm->uf_p[i]);
     }
-
     free(fm->t_p);
     free(fm->xi_p);
     free(fm->x_p);
@@ -83,10 +83,10 @@ void free_FlowModel(FlowModel *fm) {
 
     free(fm->sigma_r);
     free(fm->sigma_f);
-    
+
     // Work variables
-    free(fm->bnds);
     free(fm->w_shep);
+    free(fm->bnds);
 
     free(fm->x_p_loc_);
     free(fm->xi_);
@@ -128,7 +128,6 @@ void update_FlowModel(FlowModel *fm) {
             fm->bnds[3] = (fm->bnds[3] < fm->x_p[i][1]) ? fm->x_p[i][1] : fm->bnds[3];           
         }
 
-        // printf("%i:: %.2f - %.2f - %.2f - %.2f\n",fm->wt->i_wf, fm->bnds[0]/126 ,fm->bnds[1]/126 ,fm->bnds[2]/126 ,fm->bnds[3]/126);
         // Update filtered field
         for (i = 0; i < fm->n; i++) {
             interp_FlowModel_all(fm->wf, fm->x_p[i], fm->wt->t, fm->sigma_f, fm->uf_p[i], -1);
@@ -160,8 +159,6 @@ void project_particle_frame_FlowModel(FlowModel *fm, int i, double *x, double *x
         norm = norm < 1E-3 ? 1E-3 : norm;
         xi[0] = (x_p[0]*v[0]+x_p[1]*v[1])/norm;
         r[0]  = (x_p[1]*v[0]-x_p[0]*v[1])/norm;
-        // xi[0] = x_p[0];
-        // r[0]  = x_p[1];
 }
 /* -- end project_particle_frame_FlowModel ---------------------------------- */
 

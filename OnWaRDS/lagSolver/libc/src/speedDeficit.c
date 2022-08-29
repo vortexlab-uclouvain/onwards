@@ -14,6 +14,8 @@ SpeedDeficit* init_SpeedDeficit(WakeModel *wm) {
 
     SpeedDeficit *sd = ALLOC(SpeedDeficit);
 
+    sd->type = wm->set->sd_type;
+
     switch (wm->set->sd_type)
     {
     case 0: // BPA model
@@ -40,6 +42,25 @@ SpeedDeficit* init_SpeedDeficit(WakeModel *wm) {
     return sd;
 }
 /* -- end init_SpeedDeficit ------------------------------------------------- */
+
+void free_SpeedDeficit(SpeedDeficit *sd) {
+    int i;
+
+    switch (sd->type)
+    {
+    case 0: // BPA model
+        break;
+    // case 1: // User Define Model
+    //    pass
+    }
+
+    for (i = 0; i < sd->n_wv_; i++)
+    {
+        free(sd->wv_[i]);
+    }
+    free(sd->wv_);
+}
+/* -- end feee_SpeedDeficit ------------------------------------------------- */
 
 #define KSTR wm->sd->wv_[0]
 #define NW   wm->sd->wv_[1]
@@ -133,7 +154,7 @@ void du2_part_compute_from_wm(WakeModel *wm, double *x, double *du_interp, doubl
             for (int i_w = 0; i_w < 2; i_w++) {
                 i = IP2I(wm,idx_p[i_w]);
                 side = (i_w*2-1)*-1;
-                project_particle_frame(wm, idx_p[i_w], x, xi, r, side);
+                project_particle_frame_WakeModel(wm, idx_p[i_w], x, xi, r, side);
 
                 du  = wm->sd->du_xi_r(wm, i, wm->xi_p[i] + *xi*side, *r         )
                     + wm->sd->du_xi_r(wm, i, wm->xi_p[i] + *xi*side, *r+.25*ravg)
@@ -172,7 +193,7 @@ void du2_pos_compute_from_wm(WakeModel *wm, double *x, double *du_interp,
         for (int i_w = 0; i_w < 2; i_w++) {
             i = IP2I(wm,idx_p[i_w]);
             side = (i_w*2-1)*-1;
-            project_particle_frame(wm, idx_p[i_w], x, xi, r, side);
+            project_particle_frame_WakeModel(wm, idx_p[i_w], x, xi, r, side);
             *r = (*proj)(wm,*r,x);
             du2 += wm->sd->du_xi_r(wm, i, wm->xi_p[i] + *xi*side, *r) * (1.-w_idx_p[i_w]);
         }
@@ -329,6 +350,8 @@ int is_waked_by(WakeModel *wm, WindTurbine *wt) {
     du2_pos_compute_from_wm( wm, x_wt, du, proj_3d);
     double du_loc = NORM(du[0], du[1]);
 
+    free(x_wt);
+    
     return ( du_loc/wt->snrs->u_inc > 0.15 );
 }
 
