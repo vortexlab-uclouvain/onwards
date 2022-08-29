@@ -28,17 +28,17 @@ est_args =  {
                 'estimator3' : {'type':'ufs:wfs_waked'} 
             }    
             
-# snrs_args = {
-#                 'type':   'SensorsPreprocessed',
-#                 'export': 'snrs_buffer'
-#             }      
+snrs_args = {
+                'type':   'SensorsPreprocessed',
+                'export': 'snrs_buffer'
+            }      
 
-# est_args =  {    
-#                 'n_substeps' : 1,
-#                 'estimator0' : {'type':'fld_fromdata',  'meas_in':MINIMAL_STATES,  'state_out':MINIMAL_STATES},
-#                 # 'estimator1' : {'type':'fld_debug'},
-#                 'ini_states' : {'ct': 0, 'ti': 1, 'u_inc': 8,  'u_fs': 8}
-#             }
+est_args =  {    
+                'n_substeps' : 1,
+                'estimator0' : {'type':'fld_fromdata',  'meas_in':MINIMAL_STATES,  'state_out':MINIMAL_STATES},
+                # 'estimator1' : {'type':'fld_debug'},
+                'ini_states' : {'ct': 0, 'ti': 1, 'u_inc': 8,  'u_fs': 8}
+            }
             
 # est_args =  {    
 #                 'estimator0' : {'type':'fld_debug'},
@@ -85,7 +85,7 @@ WF_DIR = '/Users/lejeunemax/BFBulk/WFprocessed/uh8ms_ti10prc/coupling_fs_01'
 BF_DIR = '/Users/lejeunemax/BFBulk/coupling_32x8x16_8ms_10prc/coupling_fs_01/WF/'
 WM_STR_ID = 'WMcenterline_gaussianMask' 
 
-with  Farm(WF_DIR,'NREL', snrs_args, est_args, model_args, grid_args=grid_args, wt_cherry_picking=None, disable_plot=False) as wf: 
+with  Farm(WF_DIR,'NREL', snrs_args, est_args, model_args, grid_args=grid_args, wt_cherry_picking=None, enable_plot=False) as wf: 
     # wf.viz_add('part')
     wf.viz_add('estimator', ['u_inc', 'ti'], ['uCx_m2D', 'ti_m2D'], ['u_{WT}', 'TI'], ['ms^{-1}', '\%'], offset=[31.5, 31.5], ylim=[[6, 10], [0,0.2]])
     # wf.viz_add('velfield', [3,10], 0, skip=5, bf_dir=BF_DIR )

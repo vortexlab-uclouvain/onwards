@@ -26,10 +26,10 @@ class Farm:
     def __init__(self, data_dir: str, af_name: str, snrs_args: dict,
                  est_args: dict, model_args: dict, grid_args: dict={}, 
                  wt_cherry_picking: List[int]=None, out_dir: str=None,
-                 disable_plot: bool=False):
+                 enable_plot: bool=True):
 
         self.data_dir = data_dir
-        self.__init_exports__(data_dir, out_dir, disable_plot)
+        self.__init_exports__(data_dir, out_dir, enable_plot)
 
         # Casting all input dictionaries
         snrs_args  = LoggingDict(snrs_args)
@@ -85,14 +85,14 @@ class Farm:
         self.lag_solver.ini_data()
         # -------------------------------------------------------------------- #
 
-    def __init_exports__(self, data_dir:str, out_dir:str, disable_plot:bool):
+    def __init_exports__(self, data_dir:str, out_dir:str, enable_plot:bool):
         self.out_dir = f'{data_dir}/OnWaRDS_run_{self.__get_runid__()}' \
                                                  if out_dir is None else out_dir
         if self.out_dir and not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
         else:
-            lg.info('out_dir set to \'\': data exports disabled.')
-        self.disable_plot = disable_plot
+            lg.info('out_dir set to \'\': data exports enabled.')
+        self.enable_plot = enable_plot
 
         self.viz = []
         # -------------------------------------------------------------------- #
@@ -117,10 +117,6 @@ class Farm:
 
     def __viz_update__(self):
         for viz in self.viz: viz.update()
-        # -------------------------------------------------------------------- #
-
-    def viz_plot(self):
-        for viz in self.viz: viz.plot()
         # -------------------------------------------------------------------- #
 
     def iterate(self):
@@ -174,7 +170,7 @@ class Farm:
         for v in self.viz:  
             if self.out_dir:
                 v.export()
-            if not self.disable_plot:
+            if self.enable_plot:
                 v.plot()
         self.lag_solver.free()
         # -------------------------------------------------------------------- #

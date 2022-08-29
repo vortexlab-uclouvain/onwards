@@ -65,8 +65,8 @@ class LagSolver():
         self._set_c_ = py_comm.c_Set(self.set)  
         self.p       = py_comm.cLib.init_LagSolver(self.farm.n_wts, self._set_c_)
         
-        grid_args['disable'] = grid_args.get('disable', False)
-        self.grid = False if grid_args['disable'] else Grid(self, grid_args)
+        grid_args['enable'] = grid_args.get('enable', True)
+        self.grid = False if not grid_args['enable'] else Grid(self, grid_args)
         # -------------------------------------------------------------------- #
 
     def update(self):
