@@ -329,7 +329,7 @@ int is_waked_by(WakeModel *wm, WindTurbine *wt) {
     du2_pos_compute_from_wm( wm, x_wt, du, proj_3d);
     double du_loc = NORM(du[0], du[1]);
 
-    return ( du_loc/wt->snrs->u_inc > 0.001 );
+    return ( du_loc/wt->snrs->u_inc > 0.15 );
 }
 
 /* -- end is_waked_by ------------------------------------------- */
