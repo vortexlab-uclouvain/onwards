@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from .farm   import Farm
     from .sensor import Sensors
 
+# MINIMAL_STATES contains the estimated wind turbine states s_WT required by the 
+# LagSolver 
 MINIMAL_STATES = [ 'u_inc', 'u_fs', 'w_inc', 'w_fs', 'ct', 'ti', 'yaw' ]
 
 class Turbine:
@@ -175,7 +177,7 @@ class Turbine:
         self.states         = {a: 0.0 for a in avail_states}
         self.n_substeps_est = est_args.setdefault('n_substeps', 1)
 
-        est_args.setdefault('export_dir', False)
+        est_args['export_dir'] = est_args.get('export_dir', False)
         if 'export' in est_args:
             self.est_export = estimators.StateExportBuffer(self, 
                                               est_args['export'], 
@@ -229,6 +231,6 @@ class Turbine:
         else:                                     return True
         # -------------------------------------------------------------------- #
 
-    def exit(self):
+    def __exit__(self):
         if self.est_export: self.est_export.save()
         # -------------------------------------------------------------------- #

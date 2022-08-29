@@ -95,16 +95,21 @@ class _WakeCenterline(Viz):
         self._it += 1
         # -------------------------------------------------------------------- #
 
-    def plot(self):
-        super().plot()
+    def export(self):
+        super().export()
 
-        if self._it is not None:
+        # data should only be exported once
+        if self._it is not None: 
             out = { 'x':self.x,
                     't_mod':self.t_mod,
                     't_ref':self.t_ref,
                     'zc_mod':self.zc_mod,
                     'zc_ref':self.zc_ref }
             np.save(f'{self.farm.out_dir}/wcl_data.npy', out, allow_pickle=True)
+        # -------------------------------------------------------------------- #
+    
+    def plot(self):
+        return super().plot()
         # -------------------------------------------------------------------- #
 
 class WakeCenterlineXloc(_WakeCenterline):
@@ -217,5 +222,8 @@ class WakeCenterlineXloc(_WakeCenterline):
             plt.tight_layout()
             plt.subplots_adjust(left=0.12, right=0.99, hspace=0.1)
 
-            plt.savefig(f'{self.farm.out_dir}/wcl_xloc_wt{wt.i_bf:02d}.pdf')
+            self.savefig(f'wcl_xloc_wt{wt.i_bf:02d}.pdf')
         # -------------------------------------------------------------------- #
+
+    def export(self):
+        return super().export()

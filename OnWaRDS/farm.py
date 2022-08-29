@@ -12,7 +12,7 @@ from .turbine   import Turbine
 from .airfoil   import Airfoil
 from .lagSolver import LagSolver 
 from .disp.viz  import Viz
-from .utils     import LoggingDict
+from .utils     import LoggingDict, dict2txt
 
 if TYPE_CHECKING:
     from typing import List
@@ -24,10 +24,12 @@ class Farm:
     viz: List[Viz]
 
     def __init__(self, data_dir: str, af_name: str, snrs_args: dict,
-                        est_args: dict, model_args: dict, grid_args: dict={}, 
-                        wt_cherry_picking: List[int]=None, out_dir: str=None):
+                 est_args: dict, model_args: dict, grid_args: dict={}, 
+                 wt_cherry_picking: List[int]=None, out_dir: str=None,
+                 disable_plot: bool=False):
 
         self.data_dir = data_dir
+        self.__init_exports__(data_dir, out_dir, disable_plot)
 
         # Casting all input dictionaries
         snrs_args  = LoggingDict(snrs_args)
@@ -52,21 +54,26 @@ class Farm:
 
         self.af = Airfoil(af_name)
 
+        # Initializing turbines sensors and states estimators
         self.__init_turbines__(snrs_args, est_args)
         self.it = 0
         self.t  = self.wts[0].t
         self.dt = 1./self.wts[0].fs
 
+        # Initializing Lagrangian flow model
         self.__init_LagSolver__(model_args, grid_args)
 
         self.update_states_flag    = False
         self.update_LagSolver_flag = False
 
-        self.out_dir = out_dir or f'{data_dir}/OnWaRDS_run_{self.__get_runid__()}'
-        if not os.path.exists(self.out_dir):
-            os.makedirs(self.out_dir)
-        self.viz = []
-        # -------------------------------------------------------------------- #
+        # Exporting settings
+        if self.out_dir: 
+            buffer = {'snrs_args':  snrs_args,
+                      'est_args':   est_args,
+                      'model_args': model_args,
+                      'grid_args':  grid_args}
+            dict2txt(buffer, f'{self.out_dir}/settings.txt')
+         # -------------------------------------------------------------------- #
 
     def __init_turbines__(self, snrs_args, est_args) -> None:
         self.wts = [ Turbine(self, i_wt, snrs_args, est_args) for i_wt in range(self.n_wts) ]
@@ -76,6 +83,18 @@ class Farm:
         self.lag_solver = LagSolver(self, model_args, grid_args)
         for wt in self.wts: wt.init_LagSolver()
         self.lag_solver.ini_data()
+        # -------------------------------------------------------------------- #
+
+    def __init_exports__(self, data_dir:str, out_dir:str, disable_plot:bool):
+        self.out_dir = f'{data_dir}/OnWaRDS_run_{self.__get_runid__()}' \
+                                                 if out_dir is None else out_dir
+        if self.out_dir and not os.path.exists(self.out_dir):
+            os.makedirs(self.out_dir)
+        else:
+            lg.info('out_dir set to \'\': data exports disabled.')
+        self.disable_plot = disable_plot
+
+        self.viz = []
         # -------------------------------------------------------------------- #
 
     def viz_add(self, type: str, *args, **kwargs):
@@ -151,8 +170,12 @@ class Farm:
         # -------------------------------------------------------------------- #
 
     def __exit__(self, *args, **kwargs):
-        for wt in self.wts: wt.exit()
-        for v in self.viz:  v.plot()
+        for wt in self.wts: wt.__exit__()
+        for v in self.viz:  
+            if self.out_dir:
+                v.export()
+            if not self.disable_plot:
+                v.plot()
         self.lag_solver.free()
         # -------------------------------------------------------------------- #
 

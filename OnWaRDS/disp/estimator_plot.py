@@ -62,12 +62,20 @@ class Estimator_plot(Viz):
         self._it += 1
         # -------------------------------------------------------------------- #
 
-    def plot(self):
+    def __clean_data__(self):
         self.data = [ {s: d[s][:2,:self._it-1] for s in d} for d in self.data ]
         self.time = self.time[:self._it-1]
+        # -------------------------------------------------------------------- #
+
+    def export(self):
+        self.__clean_data__()
 
         out = {'time':self.time,'label':self.l_map,'data':self.data}
         np.save(f'{self.farm.out_dir}/estimator_data.npy', out, allow_pickle=True)
+        # -------------------------------------------------------------------- #
+
+    def plot(self):
+        if not self._was_exported: self.__clean_data__()
 
         for i_wt, d_wt in enumerate(self.data):
             _, axs = plt.subplots(len(d_wt), 1, squeeze=False)
@@ -105,5 +113,5 @@ class Estimator_plot(Viz):
                 plt.ylabel(l)
 
             plt.xlabel('t [s]')
-            plt.savefig(f'{self.farm.out_dir}/estimator_wt{self.farm.wts[i_wt].i_bf}.pdf')
+            self.savefig(f'estimator_wt{self.farm.wts[i_wt].i_bf}.pdf')
         # -------------------------------------------------------------------- #

@@ -13,12 +13,22 @@ if TYPE_CHECKING:
 class Viz():
     def __init__(self, farm: Farm):
         self.farm = farm
+        self._was_exported = False
         # -------------------------------------------------------------------- #
 
     def update(self):
         pass
         # -------------------------------------------------------------------- #
 
+    def export(self):
+        self._was_exported = True
+        # -------------------------------------------------------------------- #
+
     def plot(self):
         pass
+        # -------------------------------------------------------------------- #
+
+    def savefig(self, fid:str, *args, **kwargs):
+        if self.farm.out_dir:
+            plt.savefig(f'{self.farm.out_dir}/{fid}', *args, **kwargs)
         # -------------------------------------------------------------------- #

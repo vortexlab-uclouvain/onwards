@@ -77,11 +77,12 @@ class REWS_plot(Viz):
             str_id = f'{self.x_interp[0]:.0f}_{self.x_interp[1]:.0f}_{self.x_interp[2]:.0f}'
 
         np.save(f'{self.farm.out_dir}/rews_{str_id}.npy', 
-                {'t_mod':self.t_mod, 'u_mod':self.u_mod,
-                                    't_ref':self.t_ref, 'u_ref':self.u_ref},
+                { 't_mod':self.t_mod, 'u_mod':self.u_mod,
+                  't_ref':self.t_ref, 'u_ref':self.u_ref },
                 allow_pickle=True)
+        # -------------------------------------------------------------------- #
+
     def plot(self):
-        self.export()
         if self._it == -1: return
 
         normx = lambda _x: (_x)/(self.farm.af.D/self.u_norm)
@@ -137,7 +138,7 @@ class REWS_plot(Viz):
             plt.tight_layout()
             plt.subplots_adjust(left=0.12, right=0.99, hspace=0.1)
 
-            plt.savefig(f'{self.farm.out_dir}/rews_wt{i_wt_bf}.pdf')
+            self.savefig(f'rews_wt{i_wt_bf}.pdf')
 
         for v_wt in viz_rews_all:
             raise NotImplementedError('plot not implement if no parent turbine selected.')

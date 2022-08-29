@@ -24,19 +24,22 @@ class VelField_plot(Viz):
     def __init__(self, farm: Farm, vel_bnds: list, comp: int, bf_dir:str=False, 
                  mp4_export:bool=True, skip:int=1, t_start:float=False, 
                  skeleton: bool=False, slice_export: bool=False,
-                 plot_overide: bool=False, du_export: bool=False,):
+                 disable_anim: bool=False, du_export: bool=False,):
         
-        if not self.grid: raise Exception('Grid should be enabled for VelField_plot.')
         
         super().__init__(farm)
         self.vel_bnds     = vel_bnds
         self.out_dir      = self.farm.out_dir
         self.grid         = self.farm.lag_solver.grid
-        self.plot_overide = plot_overide
+        self.disable_anim = disable_anim
+
+        if not self.grid: raise Exception('Grid should be enabled for VelField_plot.')
 
         # -- MP4 export -- #
-        self.mp4_export = mp4_export and not self.plot_overide
+        self.mp4_export = mp4_export and not self.disable_anim
         if self.mp4_export:
+            if not self.farm.out_dir:
+                raise ValueError('mp4_export can not be set to True if no output directory is specified in farm.')
             self.frame_id = 0
             if not os.path.exists(f'{self.out_dir}/.tmp/'):
                 os.makedirs(f'{self.out_dir}/.tmp/')
@@ -44,10 +47,11 @@ class VelField_plot(Viz):
         # -- Slice export -- #
         self.slice_export = slice_export
         if self.slice_export:
+            if not self.farm.out_dir:
+                raise ValueError('slice_export can not be set to True if no output directory is specified in farm.')
             self.slice_id = 0
             if not os.path.exists(f'{self.out_dir}/slices/'): 
                 os.makedirs(f'{self.out_dir}/slices/')
-            farm.glob_set['save'] = True
 
         self.skeleton = skeleton
         if skeleton and not bf_dir:
@@ -68,7 +72,7 @@ class VelField_plot(Viz):
 
         # -- Initializing plots -- #
         
-        if not self.plot_overide:
+        if not self.disable_anim:
             self.fig, self.axs = plt.subplots(self.n_ax, 1, sharex=True, sharey=True, squeeze=False, figsize=(12,6))
 
             i_ax = 0; plt.sca(self.axs[i_ax][0])
@@ -80,7 +84,7 @@ class VelField_plot(Viz):
             self.plt_wt_f3 = self._set_layout(plt.gca(), self.im_f3, skip_x=bool(bf_dir))
 
         if bf_dir: 
-            if not self.plot_overide:
+            if not self.disable_anim:
                 i_ax += 1; plt.sca(self.axs[i_ax][0])      
             self._bf_ini(bf_dir)
         
@@ -90,7 +94,7 @@ class VelField_plot(Viz):
 
         uu_f3 = self.grid.u_compute()[self.comp]
         if self.skeleton:
-            if not self.plot_overide:
+            if not self.disable_anim:
                 self._skeleton_args = {'colors':'w', 'linestyles':'solid', 'linewidths':0.6}
                 # self._skeleton_args = {'cmap':self.cmap_vel, 'linestyles':'solid', 'linewidths':0.6}
                 self.im_bf_skeleton = plt.contour( self.grid._x/self.farm.af.D, 
@@ -156,7 +160,7 @@ class VelField_plot(Viz):
 
         self.bf_map = tuple(np.meshgrid( x_vec_idx, y_vec_idx, indexing='ij'))
 
-        if not self.plot_overide:
+        if not self.disable_anim:
             self.im_bf = plt.imshow( np.rot90(u_vec_fld.squeeze()[self.bf_map]),
                                     vmin=self.vel_bnds[0], vmax=self.vel_bnds[1], 
                                     cmap=self.cmap_vel,
@@ -222,7 +226,7 @@ class VelField_plot(Viz):
 
         self.time = self.farm.t
         time_adim = 100000#self.time/self.farm.af.D*self.farm.u_h
-        if not self.plot_overide:
+        if not self.disable_anim:
             plt.figure(self.fig.number)
         self.time_txt.set_text(r'$t={'+f'{self.time:2.1f}'+r'}\; [s] = {'
                                                 +f'{time_adim:2.2f}'+'} \;T_{c}$')
@@ -232,18 +236,18 @@ class VelField_plot(Viz):
 
         uu_f3 = self.grid.u_compute()[self.comp]
 
-        if not self.plot_overide:
+        if not self.disable_anim:
             self.im_f3.set_data(np.rot90(uu_f3))
             self._layout_update(self.plt_wt_f3)
 
         if self.bf_dir:
             self.er_wf.dataTimeUpdate(self.time2it(self.farm.lag_solver.get_time()))
             uu_bf = self.er_wf.getField('Vel',self.comp)[0].squeeze()
-            if not self.plot_overide:
+            if not self.disable_anim:
                 self.im_bf.set_data(np.rot90(uu_bf[self.bf_map]))
                 self._layout_update(self.plt_wt_bf)
 
-        if self.skeleton and not self.plot_overide:
+        if self.skeleton and not self.disable_anim:
             for coll in self.im_bf_skeleton.collections:
                 coll.remove()
             self.im_bf_skeleton = plt.contour( self.grid._x/self.farm.af.D, 
@@ -252,8 +256,8 @@ class VelField_plot(Viz):
                                                np.linspace(*self.vel_bnds,7),
                                                vmin=self.vel_bnds[0], vmax=self.vel_bnds[1], 
                                                **self._skeleton_args    )
-        if self.mp4_export and not self.plot_overide:
-            plt.savefig(f"{self.out_dir}/.tmp/frame{self.frame_id:03d}.png", dpi=200)
+        if self.mp4_export and not self.disable_anim:
+            self.savefig(f'/.tmp/frame{self.frame_id:03d}.png', dpi=200)
             self.frame_id += 1
 
         if self.slice_export:
