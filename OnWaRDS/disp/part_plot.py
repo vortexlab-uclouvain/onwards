@@ -15,9 +15,9 @@ CMAP = 'tab20'
 
 class Part_plot(Viz):
 
-    str_ls = [ {'s':3,'marker':'o','label':'wake'}, 
-               {'s':3,'marker':'^','label':'flow'},
-               {'s':3,'marker':'o'}                 ]
+    str_ls = [ {'s':8,'marker':'o','label':'wake', 'lw':0.78}, 
+               {'s':10,'marker':'^','label':'flow', 'facecolors':'w', 'lw':0.78},
+               {'s':8,'marker':'o', 'lw':1}                 ]
     vel_str_id = ['u', 'w']
 
     def __init__(self, farm: Farm, *args, **kwargs):
@@ -28,12 +28,14 @@ class Part_plot(Viz):
         plt.sca(self.axs[0])
         self.part_plt = [None] * 2
 
-        for i, (s, l) in enumerate(zip(['W' ], self.str_ls)):
+        for i, (s, l) in enumerate(zip(['W', 'F'], self.str_ls)):
+            c = plt.get_cmap(CMAP)(self.farm.lag_solver.get_part_iwt(s))
             self.part_plt[i] = plt.scatter(self.farm.lag_solver.get(s, 'x_p', comp=0)/self.farm.af.D,
                                            self.farm.lag_solver.get(s, 'x_p', comp=1)/self.farm.af.D,
-                                           c = plt.get_cmap(CMAP)(self.farm.lag_solver.get_part_iwt(s)),
-                                           **l)
+                                           edgecolors = c,
+                                           **({'facecolors':c}|l))
             plt.ylabel('$z/D$')
+        plt.legend()
 
         plt.xlim( x/self.farm.af.D for x in [self.farm.lag_solver.grid.x_bnds[0], self.farm.lag_solver.grid.x_bnds[-1]])
         plt.ylim( x/self.farm.af.D for x in [self.farm.lag_solver.grid.z_bnds[0], self.farm.lag_solver.grid.z_bnds[-1]])
@@ -66,7 +68,7 @@ class Part_plot(Viz):
         self.title.set_text(f'Time: {self.farm.t} s')
 
         plt.figure(self.fig.number)
-        for s, p in zip(['W' ], self.part_plt):
+        for s, p in zip(['W', 'F'], self.part_plt):
             p.set_offsets([(x, z) for x, z in
                         zip(self.farm.lag_solver.get(s, 'x_p', comp=0)/self.farm.af.D,
                             self.farm.lag_solver.get(s, 'x_p', comp=1)/self.farm.af.D)])

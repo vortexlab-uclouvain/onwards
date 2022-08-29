@@ -110,12 +110,13 @@ class _WakeCenterline(Viz):
 class WakeCenterlineXloc(_WakeCenterline):
     def __init__(self, farm: Farm, bf_dir:str , wm_str_id:str, x_loc:List[float], 
                  xlim:List[float]=None, ylim:List[float]=None, 
-                 u_norm:float=None):
+                 u_norm:float=None, diag:bool=True):
         super().__init__(farm, bf_dir, wm_str_id)
         self.x_loc  = x_loc
         self.xlim   = xlim
         self.ylim   = ylim
         self.u_norm = u_norm or farm.af.D 
+        self.diag   = diag
         # -------------------------------------------------------------------- #
 
     def update(self):
@@ -179,6 +180,32 @@ class WakeCenterlineXloc(_WakeCenterline):
                                      zc_ref_low,
                                      zc_ref_up, 
                                      color=[0.7,0.7,0.7] )
+
+
+                    idx_t0_ref = np.argmin(np.abs(self.t_ref-self.t_ref[0]-150))
+                    idx_t0_mod = np.argmin(np.abs(self.t_mod-self.t_mod[0]-150))
+
+                    v0 = normy(zc_mod[idx_t_ref,idx_x])
+                    v1 = np.interp( self.t_ref[idx_t_ref], 
+                                    self.t_mod, 
+                                    normy(zc_ref_interp[I_MASK][:,idx_x]))
+
+                    norm = (np.mean(v1**2))**.5   
+
+                    rho   = (np.mean((v0-np.mean(v0))*(v1-np.mean(v1))) \
+                                                    /(np.std(v0)*np.std(v1)))
+                    bias  = np.mean(v0-v1)/norm
+                    err   = np.mean(np.abs(v0-v1))/norm
+                    mape  = np.mean(np.abs((v0-v1)/v0))
+
+                    buffer  = r'$\rho =' + f'{rho:.2f}'  + '$  '
+                    buffer += r'$b ='    + f'{bias:.2f}' + '$  '
+                    buffer += r'$e ='    + f'{err:.2f} ({((v0**2).mean())**.5:.2g} / {((v1**2).mean())**.5:.2g})'  + '$  '
+                    buffer += r'$MAPE =' + f'{mape:.2f}' + '$'
+                    plt.text( 0.975, 0.95, buffer,
+                              horizontalalignment='right',
+                              verticalalignment='top',
+                              transform = ax.transAxes )
 
                     ax_last = ax
                 else:

@@ -125,7 +125,6 @@ class Sector():
     def update_snrs(self, t, m_flap_inst):
         alpha = np.exp( -(t-self.t_prev)/self.tau )
         self.m_flap_avg = (alpha) * self.m_flap_avg + (1-alpha) * m_flap_inst 
-        # self.m_flap_avg = m_flap_inst 
         self.t_prev = t
         self.was_updated = True
 

@@ -1,6 +1,4 @@
 from __future__ import annotations
-from copyreg import pickle
-from random import randrange
 from typing import TYPE_CHECKING, List
 
 import logging
@@ -87,6 +85,7 @@ class REWS_plot(Viz):
         if self._it == -1: return
 
         normx = lambda _x: (_x)/(self.farm.af.D/self.u_norm)
+        normy = lambda _y: (_y)/(self.u_norm)
 
         # Gather all REWS_plot objects
         viz_rews_all = [v for v in self.farm.viz if isinstance(v, REWS_plot)]
@@ -109,16 +108,24 @@ class REWS_plot(Viz):
 
             for ax, v in zip(axs, v_wt):
                 plt.sca(ax)
-                plt.plot(v.t_ref ,v.u_ref, **ls.MOD)
-                plt.plot(v.t_mod[:v._it] ,v.u_mod[:v._it], **ls.REF)
+                plt.plot( normx(v.t_ref),
+                          normy(v.u_ref),
+                          **ls.REF)
+                plt.plot( normx(v.t_mod[:v._it]),
+                          normy(v.u_mod[:v._it]), 
+                          **ls.MOD)
                 if v.fs_flag:
-                    plt.plot(v.t_mod[:v._it] ,v.u_mod_fs[:v._it], **ls.MOD | {'linestyle':'--'}) 
+                    plt.plot( normx(v.t_mod[:v._it]) ,
+                              normy(v.u_mod_fs[:v._it]),
+                               **ls.MOD | {'linestyle':'--'}) 
 
                 dx = v.x_interp[0] - v.wt.x[0] 
                 plt.ylabel(r'$\frac{1}{U_{ABL}}u_{RE}(t,'+f'{dx/v.farm.af.D:.1f}'+r'D)$')
 
+                _ylim = [ np.floor(min(normx(v_wt[0].u_ref))),
+                          max(np.ceil(max(normx(v_wt[0].u_ref))), 1.1) ]
                 plt.xlim(v.xlim or normx(v.t_mod[:v._it][[0,-1]]))
-                if v.ylim: plt.ylim(v.ylim)
+                plt.ylim(v.ylim or _ylim)
 
                 ax_last = ax
 
