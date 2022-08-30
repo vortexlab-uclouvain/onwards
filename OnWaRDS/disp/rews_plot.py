@@ -49,6 +49,11 @@ class REWS_plot(Viz):
         self._it = 0
 
         # -------------------------------------------------------------------- #
+
+    def reset(self):
+        self._it = 0
+        # -------------------------------------------------------------------- #
+        
     def update(self):
         if self.farm.update_LagSolver_flag:
             self.t_mod[self._it] = self.farm.t

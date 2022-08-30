@@ -23,13 +23,13 @@ if TYPE_CHECKING:
 
 I_MASK = 0
 
-class _WakeCenterline(Viz):
-    def __init__(self, farm: Farm, bf_dir: str, wm_str_id: str):
+class WakeCenterline(Viz):
+    def __init__(self, farm: Farm, bf_dir: str, wm_str_id: str, i_mask: int=None):
         super().__init__(farm)
 
-        # check for previous _WakeCenterline initialization
+        # check for previous WakeCenterline initialization
         
-        data = next((v for v in self.farm.viz if isinstance(v, _WakeCenterline)), None)
+        data = next((v for v in self.farm.viz if isinstance(v, WakeCenterline)), None)
 
         if data: # data was already imported
             self.x       = data.x
@@ -51,8 +51,13 @@ class _WakeCenterline(Viz):
             it0_str = wm_fid[0].rsplit('_',1)[1]
 
             gaussian_flag = 'gaussian' if 'gaussian' in wm_str_id else False
-            self.n_masks  = len([fid for fid in wm_fid if fid.rsplit('_',2)[-2]=='w00'])
-        
+            if i_mask:
+                self.n_masks = 1
+                self.i_masks = [i_mask]
+            else:
+                self.n_masks  = len([fid for fid in wm_fid if fid.rsplit('_',2)[-2]=='w00'])
+                self.i_masks = range(self.n_masks)
+
             self.x      = np.empty(farm.n_wts, dtype=object)
 
             self.zc_ref = np.empty(farm.n_wts, dtype=object)
@@ -62,7 +67,7 @@ class _WakeCenterline(Viz):
                 wm_path = lambda i_mask: f'{wm_dir}{wm_str_id}{i_mask:02d}_w{wt.i_bf:02d}_{it0_str}'
 
                 # n_mask masks are available for each wake tracked
-                wms = [Centerline(wm_path(i), mask_type=gaussian_flag) for i in range(self.n_masks)]
+                wms = [Centerline(wm_path(i), mask_type=gaussian_flag) for i in self.i_masks]
                 
                 # initializing data
                 n_t = len(farm)
@@ -84,6 +89,11 @@ class _WakeCenterline(Viz):
             self._it = 0
         
         # -------------------------------------------------------------------- #
+
+    def reset(self):
+        self._it = 0
+        # -------------------------------------------------------------------- #
+
     def update(self):
         if self._it is None: return 
 
@@ -112,11 +122,11 @@ class _WakeCenterline(Viz):
         return super().plot()
         # -------------------------------------------------------------------- #
 
-class WakeCenterlineXloc(_WakeCenterline):
+class WakeCenterlineXloc_plot(WakeCenterline):
     def __init__(self, farm: Farm, bf_dir:str , wm_str_id:str, x_loc:List[float], 
-                 xlim:List[float]=None, ylim:List[float]=None, 
+                 i_mask:int=None, xlim:List[float]=None, ylim:List[float]=None, 
                  u_norm:float=None, diag:bool=True):
-        super().__init__(farm, bf_dir, wm_str_id)
+        super().__init__(farm, bf_dir, wm_str_id, i_mask)
         self.x_loc  = x_loc
         self.xlim   = xlim
         self.ylim   = ylim
@@ -140,9 +150,11 @@ class WakeCenterlineXloc(_WakeCenterline):
                 ref_interp = interpolate.interp2d(x, self.t_ref, zc_mask, kind='linear')
                 zc_ref_interp[i_mask] = ref_interp(x, self.t_ref)
             
-            fig, axs = plt.subplots(len(self.x_loc), 1, 
-                                        sharex=True, sharey=True, figsize=(6,8))
+            fig, axs = plt.subplots(len(self.x_loc), 1, sharex=True,
+                                      sharey=True, figsize=(6,8), squeeze=False)
+
             for ax, x_ax in zip(axs, self.x_loc):
+                ax = ax[0]
 
                 # Checking if x_loc is valid for meandering
                 x_wt_all = np.load(f'{self.farm.data_dir}/geo.npy')

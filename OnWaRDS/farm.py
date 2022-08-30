@@ -85,10 +85,25 @@ class Farm:
         self.lag_solver.ini_data()
         # -------------------------------------------------------------------- #
 
+    def __get_runid__(self):
+        run_id_path = f'{os.environ["ONWARDS_PATH"]}/.runid'
+
+        try:                        fid = open(run_id_path)
+        except FileNotFoundError:   run_id = 0
+        else: 
+            with fid:               run_id = int(fid.readline())
+                
+        with open(run_id_path, 'w') as fid:
+            fid.write('{}'.format(run_id+1))
+
+        return run_id
+        # -------------------------------------------------------------------- #
+
     def __init_exports__(self, data_dir:str, out_dir:str, enable_plot:bool, enable_logger:bool):
         self.out_dir = f'{data_dir}/OnWaRDS_run_{self.__get_runid__()}' \
                                                  if out_dir is None else out_dir
         if self.out_dir and not os.path.exists(self.out_dir):
+            lg.info(f'Data exported to {self.out_dir}.')
             os.makedirs(self.out_dir)
 
             if enable_logger: # adding a log file handler
@@ -108,15 +123,17 @@ class Farm:
     def viz_add(self, type: str, *args, **kwargs):
         _type = type.lower()
         if   _type == 'part':
-            from .disp.part_plot       import Part_plot          as Viz
+            from .disp.part_plot       import Part_plot               as Viz
         elif _type == 'velfield':
-            from .disp.velField_plot   import VelField_plot      as Viz
+            from .disp.velField_plot   import VelField_plot           as Viz
+        elif _type == 'wakecenterline':
+            from .disp.centerline_plot import WakeCenterline          as Viz
         elif _type == 'wakecenterline_xloc':
-            from .disp.centerline_plot import WakeCenterlineXloc as Viz
+            from .disp.centerline_plot import WakeCenterlineXloc_plot as Viz
         elif _type == 'rews':
-            from .disp.rews_plot       import REWS_plot          as Viz
+            from .disp.rews_plot       import REWS_plot               as Viz
         elif _type == 'estimator':
-            from .disp.estimator_plot  import Estimator_plot     as Viz
+            from .disp.estimator_plot  import Estimator_plot          as Viz
         else:
             raise Exception(f'Viz type {type} not recognized.')
 
@@ -183,20 +200,23 @@ class Farm:
         self.lag_solver.free()
         # -------------------------------------------------------------------- #
 
-    def __get_runid__(self):
-        run_id_path = f'{os.environ["ONWARDS_PATH"]}/.runid'
+    def reset(self, model_args: dict, ini_states: dict[str, float]={}):
+        model_args   = LoggingDict(model_args)
 
-        try:                        fid = open(run_id_path)
-        except FileNotFoundError:   run_id = 0
-        else: 
-            with fid:               run_id = int(fid.readline())
-                
-        with open(run_id_path, 'w') as fid:
-            fid.write('{}'.format(run_id+1))
+        # Resetting turbines sensors and states estimators
+        for wt in self.wts: wt.reset(ini_states)
+        self.it = 0
+        self.t  = self.wts[0].t
 
-        return run_id
+        # Resetting Lagrangian flow model
+        self.lag_solver.reset(model_args)
+
+        self.update_states_flag    = False
+        self.update_LagSolver_flag = False
+
+        # Resetting  Viz
+        for v in self.viz: v.reset()
         # -------------------------------------------------------------------- #
-
 
 
 

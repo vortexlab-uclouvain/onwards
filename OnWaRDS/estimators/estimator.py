@@ -20,6 +20,13 @@ class Estimator():
         for m in meas:
             if m not in wt.snrs:
                 raise Exception(f'Measurement `{m}` not currently available.')
+        # -------------------------------------------------------------------- #
 
     def update(self):
         raise NotImplementedError
+        # -------------------------------------------------------------------- #
+
+    def reset(self):
+        pass
+        # -------------------------------------------------------------------- #
+        

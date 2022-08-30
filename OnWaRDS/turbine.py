@@ -51,7 +51,25 @@ class Turbine:
 
         self.__init_sensors__(snrs_args)
         self.__init_states__(est_args)
+        # -------------------------------------------------------------------- #
 
+    def reset(self, ini_states):
+        
+        # Reset sensors
+        self.snrs.reset()
+        self.t = self.snrs.get_buffer_data('time')
+
+        # Reset estimators and associated states
+        for e in self.estimators:
+            e.reset()
+
+        self.update_states()
+        if 'ini_states' in ini_states:
+            for s in ini_states:
+                self.states[s] = ini_states[s]
+
+        # Update communicator
+        self.update_LagSolver()
         # -------------------------------------------------------------------- #
 
     def __init_sensors__(self, snrs_args: dict):

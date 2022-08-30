@@ -24,6 +24,19 @@ LagSolver* init_LagSolver(int n_wt, LagSet *set) {
 };
 /* -- end init_LagSolver ----------------------------------------------------- */
 
+void reset_LagSolver(LagSolver *wf) {
+    // wf->set updated externally
+    int i_wt;
+    for (i_wt = 0; i_wt < wf->n_wt; i_wt++) {
+        init_FlowModel_set(wf->fms[i_wt], wf->set);
+        init_WakeModel_set(wf->wms[i_wt], wf->set);
+        init_FlowModel_states(wf->fms[i_wt]);
+        init_WakeModel_states(wf->wms[i_wt]);
+    }
+    wf->t = wf->wts[0]->t;
+};
+/* -- end reset_LagSolver --------------------------------------------------- */
+
 void free_LagSolver(LagSolver *wf) { 
     int i_wt;
     for (i_wt = 0; i_wt < wf->n_wt; i_wt++) {

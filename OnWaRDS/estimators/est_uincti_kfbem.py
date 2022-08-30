@@ -83,6 +83,18 @@ class Est_uincti_kfbem(Estimator):
                                                for i_s in range(self.n_sec)    ]
         # -------------------------------------------------------------------- #
 
+    def reset(self):
+        super().reset()
+        dt = 1./self.wt.fs
+
+        u0  = self.wt.snrs.get_buffer_data('uCx_m2D')
+        ti0 = 7.
+        self.u_ref = u0 
+        self._state = {'u': u0, 'ubar': u0, 'ti': ti0}
+
+        for s in self._sectors: s.reset()
+        # -------------------------------------------------------------------- #
+
     def update_snrs(self):
         for i_b in range(self.wt.af.nB):
             sec = next(s for s in self._sectors if s.in_bounds(self.wt.snrs.get_buffer_data('theta', i_b=i_b)))
@@ -115,19 +127,32 @@ class Sector():
         self.u_se_buffer = np.ones(self.u_est.n_t) * u0
         self.ti_buffer   = np.ones(self.u_est.n_t) * ti0
         # -------------------------------------------------------------------- #
+    
+    def reset(self, u0, ti0):
+        self.ekf.reset()
+
+        self.it     = -1
+        self.t_prev = -1e16
+        self.tau    = 6
+        self.m_flap_avg = 0
+        self.was_updated = True
+
+        self.u_se_buffer[:] = u0
+        self.ti_buffer[:]   = ti0
+
 
     def iterate_ekf(self, t):
         if self.was_updated:        
             self.it = (self.it+1)%(self.u_est.n_t)
-            self.u_se_buffer[self.it] = self.ekf.iterate(t, self.m_flap_avg)
+            self.u_se_buffer[self.it] = self.ekf.iterate(t, self.m_flap_avg) / 1.058
             self.was_updated = False
+        # -------------------------------------------------------------------- #
             
     def update_snrs(self, t, m_flap_inst):
         alpha = np.exp( -(t-self.t_prev)/self.tau )
         self.m_flap_avg = (alpha) * self.m_flap_avg + (1-alpha) * m_flap_inst 
         self.t_prev = t
         self.was_updated = True
-
         # -------------------------------------------------------------------- #
 
     def in_bounds(self, theta):
@@ -156,6 +181,10 @@ class SectorEKF():
         dx_0 = np.array([[0.1]])
 
         self.EKF = ExtendedKalmanFilter(Q, R, f, h, P_0, u_0, dx_0)
+        # -------------------------------------------------------------------- #
+    
+    def reset(self):
+        pass
         # -------------------------------------------------------------------- #
     
     def iterate(self, t, m_flap_avg):

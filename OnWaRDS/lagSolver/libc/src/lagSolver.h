@@ -181,12 +181,17 @@ struct LagSolver {
 
 // Memory Allocation and Structure Initialization       
 LagSolver* init_LagSolver(int n_wt, LagSet *set);
+void reset_LagSolver(LagSolver *wf);
 void free_LagSolver(LagSolver *wf);
 
 FlowModel* init_FlowModel(LagSolver *wf, WindTurbine *wt);
+void init_FlowModel_set(FlowModel *fm, LagSet *set);
+void init_FlowModel_states(FlowModel *fm);
 void free_FlowModel(FlowModel *fm);
 
 WakeModel* init_WakeModel(LagSolver *wf, WindTurbine *wt);
+void init_WakeModel_set(WakeModel *wf, LagSet *set);
+void init_WakeModel_states(WakeModel *wf);
 void free_WakeModel(WakeModel *fm);
 
 SpeedDeficit* init_SpeedDeficit(WakeModel *wm);

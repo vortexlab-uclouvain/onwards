@@ -291,5 +291,4 @@ class VelField_plot(Viz):
             if self.bf_dir: 
                 np.save(f'{self.out_dir}/slices/u_bf_avg.npy', 
                                                     self.slice_acc_bf/self.slice_id)
-
         # -------------------------------------------------------------------- #

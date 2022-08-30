@@ -30,10 +30,7 @@ class LagSolver():
     wms:  List(py_comm.c_WakeModel_p)
 
     def __init__(self, farm, model_args, grid_args = {}):
-        self.dwmLocAll = []
         self.farm = farm 
-
-        # raise Exception
 
         self.set = model_args
         
@@ -67,6 +64,11 @@ class LagSolver():
         
         grid_args['enable'] = grid_args.get('enable', True)
         self.grid = False if not grid_args['enable'] else Grid(self, grid_args)
+        # -------------------------------------------------------------------- #
+
+    def reset(self, model_args_new):
+        self._set_c_.update(model_args_new)
+        py_comm.cLib.reset_LagSolver(self.p)
         # -------------------------------------------------------------------- #
 
     def update(self):

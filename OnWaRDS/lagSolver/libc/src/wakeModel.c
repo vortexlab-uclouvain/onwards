@@ -15,14 +15,7 @@ WakeModel* init_WakeModel(LagSolver *wf, WindTurbine *wt) {
     wm->wf = wf;
     wm->wt = wt;
 
-    wm->set = wf->set;
-
-    wm->i0 = 0; // next particle updated
-    wm->it = 0;
-    wm->dt = wm->set->dt;
-
-    wm->n  = wf->set->n_wm;
-    wm->n_shed = wf->set->n_shed_wm;
+    init_WakeModel_set(wm, wf->set);
 
     wm->t_p     = VEC(wm->n);
     wm->xi_p    = VEC(wm->n);
@@ -36,7 +29,6 @@ WakeModel* init_WakeModel(LagSolver *wf, WindTurbine *wt) {
     
     wm->sd = init_SpeedDeficit(wm);
 
-    wm->alpha_r = 1.; 
     int i;
     for (i = 0; i < wm->n; i++) {
         wm->x_p[i]    = VEC(2);
@@ -45,16 +37,7 @@ WakeModel* init_WakeModel(LagSolver *wf, WindTurbine *wt) {
         wm->uinc_p[i] = VEC(2);
     }
 
-    for (i = 0; i < wm->n; i++) {
-        shed_wake_particle(wm, i);
-
-        // Avoid particle collision at start
-        wm->t_p[i]    += (i*wm->dt);
-        wm->x_p[i][0] += (i*wm->dt) * (wm->set->cw+1E-3) * 1E-3;
-        wm->x_p[i][1] += (i*wm->dt) * (wm->set->cw+1E-3) * 1E-3;
-    }
-    
-    wm->alpha_r = exp(- wf->set->tau_r / (wm->n_shed * wm->dt) ) ;
+    init_WakeModel_states(wm);
 
     // Work variables
     wm->idx_  = VECINT(2); // closest part index (find_wake_part)
@@ -72,6 +55,34 @@ WakeModel* init_WakeModel(LagSolver *wf, WindTurbine *wt) {
     return wm;
 }
 /* -- end init_WakeModel ---------------------------------------------------- */
+
+void init_WakeModel_set(WakeModel *wm, LagSet *set) {
+    wm->set    = set;
+    wm->n      = wm->set->n_wm;
+    wm->n_shed = wm->set->n_shed_wm;
+}
+/* -- end init_WakeModel_set ------------------------------------------------ */
+
+void init_WakeModel_states(WakeModel *wm) {
+    wm->i0 = 0; // next particle updated
+    wm->it = 0;
+    wm->dt = wm->set->dt;
+
+    wm->alpha_r = 1.; 
+
+    int i;
+    for (i = 0; i < wm->n; i++) {
+        shed_wake_particle(wm, i);
+
+        // Avoid particle collision at start
+        wm->t_p[i]    += (i*wm->dt);
+        wm->x_p[i][0] += (i*wm->dt) * (wm->set->cw+1E-3) * 1E-3;
+        wm->x_p[i][1] += (i*wm->dt) * (wm->set->cw+1E-3) * 1E-3;
+    }
+    
+    wm->alpha_r = exp(- wm->set->tau_r / (wm->n_shed * wm->dt) ) ;
+}
+/* -- end init_WakeModel_states --------------------------------------------- */
 
 void free_WakeModel(WakeModel *wm) {  
     int i;

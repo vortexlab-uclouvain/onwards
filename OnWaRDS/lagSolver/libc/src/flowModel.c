@@ -15,24 +15,10 @@ FlowModel* init_FlowModel(LagSolver *wf, WindTurbine *wt) {
     fm->wf = wf;
     fm->wt = wt;
 
-    fm->set = wf->set;
-
-    fm->i0 = 0; // next particle updated
-    fm->it = 0;
-    fm->dt = fm->set->dt;
-
-    fm->n  = wf->set->n_fm;
-    fm->n_shed = wf->set->n_shed_fm;
-
     fm->sigma_r = VEC(3);
-    fm->sigma_r[0] = wf->wts[0]->af->D * fm->set->sigma_xi_r;
-    fm->sigma_r[1] = wf->wts[0]->af->D * fm->set->sigma_r_r;
-    fm->sigma_r[2] = wf->wts[0]->af->D * fm->set->sigma_t_r;
-
     fm->sigma_f = VEC(3);
-    fm->sigma_f[0] = wf->wts[0]->af->D * fm->set->sigma_xi_f;
-    fm->sigma_f[1] = wf->wts[0]->af->D * fm->set->sigma_r_f;
-    fm->sigma_f[2] = wf->wts[0]->af->D * fm->set->sigma_t_f;
+
+    init_FlowModel_set(fm, wf->set);
 
     fm->t_p  = VEC(fm->n);
     fm->xi_p = VEC(fm->n);
@@ -45,14 +31,9 @@ FlowModel* init_FlowModel(LagSolver *wf, WindTurbine *wt) {
         fm->x_p[i]  = VEC(2);
         fm->u_p[i]  = VEC(2);
         fm->uf_p[i] = VEC(2);
-        shed_vel_particle(fm, i);
-
-        // Avoid particle collision at start
-        fm->t_p[i]    += (i*fm->dt*fm->n_shed);
-        fm->x_p[i][0] += (i*fm->dt*fm->n_shed) * (fm->set->c0+1E-3) * fm->u_p[i][0];
-        fm->x_p[i][1] += (i*fm->dt*fm->n_shed) * (fm->set->c0+1E-3) * fm->u_p[i][1];
-        fm->xi_p[i]    = NORM(fm->x_p[i][0], fm->x_p[i][1]);
     }
+
+    init_FlowModel_states(fm);
 
     // Work variables
 
@@ -66,6 +47,42 @@ FlowModel* init_FlowModel(LagSolver *wf, WindTurbine *wt) {
     return fm;
 }
 /* -- end init_FlowModel ---------------------------------------------------- */
+
+void init_FlowModel_set(FlowModel *fm, LagSet *set) {
+    fm->set    = set;
+    fm->n      = fm->set->n_fm;
+    fm->n_shed = fm->set->n_shed_fm;
+
+    // wm->set updated externally
+    fm->n_shed = fm->set->n_shed_fm;
+
+    fm->sigma_r[0] = fm->wf->wts[0]->af->D * fm->set->sigma_xi_r;
+    fm->sigma_r[1] = fm->wf->wts[0]->af->D * fm->set->sigma_r_r;
+    fm->sigma_r[2] = fm->wf->wts[0]->af->D * fm->set->sigma_t_r;
+
+    fm->sigma_f[0] = fm->wf->wts[0]->af->D * fm->set->sigma_xi_f;
+    fm->sigma_f[1] = fm->wf->wts[0]->af->D * fm->set->sigma_r_f;
+    fm->sigma_f[2] = fm->wf->wts[0]->af->D * fm->set->sigma_t_f;
+}
+/* -- end init_FlowModel_set ------------------------------------------------ */
+
+void init_FlowModel_states(FlowModel *fm) {
+    fm->i0 = 0; // next particle updated
+    fm->it = 0;
+    fm->dt = fm->set->dt;
+
+    int i;
+    for (i = 0; i < fm->n; i++) {
+        shed_vel_particle(fm, i);
+
+        // Avoid particle collision at start
+        fm->t_p[i]    += (i*fm->dt*fm->n_shed);
+        fm->x_p[i][0] += (i*fm->dt*fm->n_shed) * (fm->set->c0+1E-3) * fm->u_p[i][0];
+        fm->x_p[i][1] += (i*fm->dt*fm->n_shed) * (fm->set->c0+1E-3) * fm->u_p[i][1];
+        fm->xi_p[i]    = NORM(fm->x_p[i][0], fm->x_p[i][1]);
+    }
+}
+/* -- end init_FlowModel_states --------------------------------------------- */
 
 void free_FlowModel(FlowModel *fm) {
     int i;

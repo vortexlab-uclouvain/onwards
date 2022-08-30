@@ -19,6 +19,7 @@ class Est_ct_fromthrust(Estimator):
         states = ['ct']
         req_states = ['u_inc', 'yaw'] 
         super().__init__(wt, meas, states, req_states, avail_states)
+        # -------------------------------------------------------------------- #
 
     def update(self):
         ct_loc = self.wt.snrs.get_buffer_data('T') \
@@ -30,5 +31,7 @@ class Est_ct_fromthrust(Estimator):
             ct_loc = CT_LIM
 
         self.wt.states['ct'] = ct_loc
+        # -------------------------------------------------------------------- #
+        
 
 

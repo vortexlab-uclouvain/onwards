@@ -34,6 +34,10 @@ class Sensors():
     def __len__(self):
         raise NotImplementedError
         # -------------------------------------------------------------------- #
+
+    def reset(self):
+        raise NotImplementedError
+        # -------------------------------------------------------------------- #
         
     def iterate(self):
         """        
@@ -149,6 +153,10 @@ class SensorsPy(Sensors):
         lg.info(  f'{self.n_time} data points available from {self.time[0]:.1f} '
                 + f'to {self.time[-1]:.1f}s (sampling frequency: {fs:.2f} Hz and '
                 + f'offset: {self.t0:.1f} s)' )
+        # -------------------------------------------------------------------- #
+
+    def reset(self):
+        self._buffer_it = 0
         # -------------------------------------------------------------------- #
 
     def __getitem__(self, key):

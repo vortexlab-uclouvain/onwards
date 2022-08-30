@@ -114,9 +114,9 @@ c_Turbine_p = POINTER(c_Turbine)
 class c_Set(ctypes.Structure):
 
     _fields_ = [('n_fm',          c_int   ),
-                ('n_shed_fm', c_int   ),
+                ('n_shed_fm',     c_int   ),
                 ('n_wm',          c_int   ),
-                ('n_shed_wm', c_int   ),
+                ('n_shed_wm',     c_int   ),
                 ('sd_type',       c_int   ),
                 ('c0',            c_double),
                 ('cw',            c_double),
@@ -132,16 +132,31 @@ class c_Set(ctypes.Structure):
                 ('ceps',          c_double),
                 ('tau_r',         c_double),]
 
+    _fields_types_map_ = {f[0]: f[1] for f in _fields_}
+
     def __init__(self, model_args):
         super().__init__()
         self.p = pointer(self)
-
-        for f in self._fields_:
-            if f[0] in model_args:
-                if f[1]==c_double: setattr( self, f[0], float( model_args[f[0]] ) )
-                if f[1]==c_int   : setattr( self, f[0],   int( model_args[f[0]] ) )
+        for f, f_type in self._fields_types_map_.items():
+            if f in model_args:
+                if f_type==c_double: setattr( self, f, float( model_args[f] ) )
+                if f_type==c_int   : setattr( self, f,   int( model_args[f] ) )
             else:
-                raise Exception(f'Model Initialization failed: no value was provided for {f[0]}.')
+                raise Exception(f'Model Initialization failed: no value was provided for {f}.')
+        # -------------------------------------------------------------------- #
+
+    def update(self, model_args_new):
+        for f in ['n_fm', 'n_wm', 'sd_type']:
+            if f in model_args_new:
+                raise ValueError(f'{f} does not support value reallocation.')
+
+        for f in model_args_new:
+            if self._fields_types_map_[f]==c_double: 
+                setattr( self, f, float( model_args_new[f] ) )
+            if self._fields_types_map_[f]==c_int   :
+                setattr( self, f,   int( model_args_new[f] ) )
+        
+            lg.error(f'updating field {f}')
         # -------------------------------------------------------------------- #
 
     def free(self):

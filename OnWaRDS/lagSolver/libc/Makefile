@@ -13,8 +13,6 @@ _OBJ = $(patsubst %,obj/%,$(OBJ))
 default: display wakeModel.so
 
 display: 
-	# @echo "******** OnWaRDS - v1.0 ********"
-
 	@echo "  ____    __          __   _____  _____   _____ "
 	@echo " / __ \   \ \        / /  |  __ \|  __ \ / ____|"
 	@echo "| |  | |_ _\ \  /\  / /_ _| |__) | |  | | (___  "

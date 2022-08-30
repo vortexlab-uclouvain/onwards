@@ -50,6 +50,10 @@ class Estimator_plot(Viz):
         self._it = 0
         # -------------------------------------------------------------------- #
 
+    def reset(self):
+        self._it = 0
+        # -------------------------------------------------------------------- #
+
     def update(self):
         for i_wt in range(self.farm.n_wts):
             for s, m, *_ in zip(*self.map):
