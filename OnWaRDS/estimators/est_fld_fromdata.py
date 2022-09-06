@@ -11,6 +11,9 @@ if TYPE_CHECKING:
 
 class Est_fld_fromdata(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
+        """
+        Extract the turbine state directly from the Sensor data.
+        """
         meas   = est_args['meas_in']
         states = est_args['state_out']
         req_states = [] 

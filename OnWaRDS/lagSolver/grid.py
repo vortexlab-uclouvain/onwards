@@ -19,6 +19,29 @@ class Grid():
     lag_solver: LagSolver
 
     def __init__(self, lag_solver: LagSolver, grid_args: dict):
+        """ Inits the Grid over which data will be interpolated. 
+
+        Parameters
+        ----------
+        lag_solver : LagSolver
+            Parent LagSolver object
+        model_args : dict
+            Dictionary containing the parameters used for the Lagrangian flow 
+            model's initialization.
+
+            grid_args description
+
+            :enable:     *(bool,  optional)* - 
+                If False, the grid is turned off, by default True.
+            :dx:         *(float, optional)* - 
+                x grid spacing in [m], by default 20.
+            :dx:         *(float, optional)* - 
+                x grid spacing in [m], by default 20.
+            :dz:         *(float, optional)* - 
+                z grid spacing in [m], by default 20.
+            :margin:     *(List[List[float]], optional)* - 
+                [[xm, xp], [ym, yp]] minimal margin of the domain around each turbine.
+        """
         self.farm       = lag_solver.farm
         self.lag_solver = lag_solver
         self.set        = grid_args
@@ -80,17 +103,89 @@ class Grid():
         self._u_vec_buffer  = Vec((2, *(self.xx.shape))) 
         self._du_vec_buffer = Vec((2, *(self.xx.shape))) 
 
+        self._u_was_updated  = False
+        self._du_was_updated = False
+
         lg.info('  Grid boundaries : x- {} > x+ {} | z- {} > z+ {} [m]' \
                                                        .format(*self.x_bnds, *self.z_bnds))
         lg.info('  Grid spacing    : dx {} | dz {}  [m] ({} points)' \
-                                        .format(dx, dz, np.product(self.xx.shape)))
+                                        .format(dx, dz, np.product(self.xx.shape)))      
+        # -------------------------------------------------------------------- #
 
-    def u_fm_compute(self, **kwargs):
-        return self.lag_solver.interp_FlowModel(*self._mesh_vec, buffer=self._u_vec_buffer, **kwargs)
+    def update(self):
+        """
+        Updates the grid
+        """
+        self._u_was_updated  = False
+        self._du_was_updated = False
+        # -------------------------------------------------------------------- #
+
+    def u_fm_compute(self, filt: str = 'flow') -> np.array:
+        """ Interpolates the ambient flow model over the grid.
+
+        Parameters
+        ----------
+        filt : str, optional
+            'flow' or 'rotor' depending on the width of the filter used for the 
+            ambient velocity field computation, by default 'flow'.
+
+        Returns
+        -------
+        np.array
+            The ambient flow field interpolated at the grid locations.
+
+        Raises
+        ------
+        ValueError    
+            If filt is not valid (ie: 'rotor' or 'flow').
+        """
+        if filt not in ['flow', 'rotor']:
+            raise ValueError('Filter type not recognized (should be `flow` or `rotor`.')
+
+        if filt == 'rotor':
+            return self.lag_solver.interp_FlowModel(*self._mesh_vec)
+
+        if filt == 'flow':
+            if not self._u_was_updated:
+                self.lag_solver.interp_FlowModel(*self._mesh_vec, buffer=self._u_vec_buffer)
+                self._u_was_updated = True
+
+            return self._u_vec_buffer.x
+
+        # -------------------------------------------------------------------- #
     
-    def du_wm_compute(self, subGridFlag=False):
-        return self.lag_solver.interp_WakeModel(*self._mesh_vec, buffer=self._du_vec_buffer)
+    def du_wm_compute(self, subGridFlag=False) -> np.array:
+        """ 
+        Interpolates the wake flow model over the grid.
 
-    def u_compute(self, **kwargs):
-        return (  self.u_fm_compute(filt=kwargs.get('filt','flow'))
+        Returns
+        -------
+        np.array
+            The ambient wake field interpolated at the grid locations.
+        
+        """
+        if not self._du_was_updated:
+            self.lag_solver.interp_WakeModel(*self._mesh_vec, buffer=self._du_vec_buffer)
+            self._du_was_updated = True
+        return self._du_vec_buffer.x        
+        # -------------------------------------------------------------------- #
+
+    def u_compute(self, filt='flow') -> np.array:
+        """ 
+        Interpolates the flow model over the grid.
+
+        Parameters
+        ----------
+        filt : str, optional
+            'flow' or 'rotor' depending on the width of the filter used for the 
+            ambient velocity field computation, by default 'flow'.
+
+        Returns
+        -------
+        np.array
+            The ambient flow field interpolated at the grid locations.
+        """
+
+        return (  self.u_fm_compute(filt=filt)
                 - self.du_wm_compute()                              )
+        # -------------------------------------------------------------------- #

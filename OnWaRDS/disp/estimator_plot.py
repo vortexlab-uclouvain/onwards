@@ -21,6 +21,46 @@ class Estimator_plot(Viz):
                  ylim: List[List[float, float]]=None, 
                  xlim: List[float, float]=None,
                  diag: bool=True):
+        """ Extracts the Turbine states and compares them to the reference data.
+
+        Allows to assess the performances of the estimator by comparing the estimated 
+        turbine state to its reference state. The reference value is extracted 
+        from the associated Sensor object (ie: Sensors object can store reference
+        data that is never used as part of the state estimation and hence only 
+        serves as validation data).   
+        
+        Parameters
+        ----------
+        farm : Farm
+            Parent Farm Object
+        states : List[str]
+            List containing the turbine states, s_wt, that should be extracted.
+        measurements : List[str]
+            List containing the turbine measurements that should be extracted.
+        labels : List[str]
+            List containing the name/label of the fields extracted.
+        units : List[str]
+            List containing the unit (eg: '[ms-1]') of the fields extracted.
+        offset : List[float], optional
+            List containing the temporal offset applied to the measurments.
+        ylim : List[List[float, float]], optional
+            List containing the user defined bounds associated to each field, by
+            default None
+        xlim : List[float, float], optional
+            User defined time bounds for plotting, by default None.
+        diag : bool, optional
+            If True, the correlation, error and MAPE are evaluated, by default True.
+
+        Raises
+        ------
+        ValueError
+            If the length of states, measurements, labels, units, offset and 
+            ylim is not consistent.
+        ValueError
+            The requested field / measurement is not available.
+        ValueError
+            The requested field / turbine state is not available.
+        """                 
         super().__init__(farm)
 
         self.s_map    = states
@@ -66,22 +106,18 @@ class Estimator_plot(Viz):
         self._it += 1
         # -------------------------------------------------------------------- #
 
-    def __clean_data__(self):
+    def _data_clean(self):
         self.data = [ {s: d[s][:2,:self._it-1] for s in d} for d in self.data ]
         self.time = self.time[:self._it-1]
         # -------------------------------------------------------------------- #
 
-    def export(self):
-        self.__clean_data__()
-
+    def _export(self):
         out = {'time':self.time,'label':self.l_map,'data':self.data}
         np.save(f'{self.farm.out_dir}/estimator_data.npy', out, allow_pickle=True)
         # -------------------------------------------------------------------- #
 
-    def plot(self):
-        if not self._was_exported: self.__clean_data__()
-
-        for i_wt, d_wt in enumerate(self.data):
+    def _plot(self):
+         for i_wt, d_wt in enumerate(self.data):
             _, axs = plt.subplots(len(d_wt), 1, squeeze=False)
             for ax, s, _, l, o, ylim in zip(axs[:,0], *self.map):
                 plt.sca(ax)

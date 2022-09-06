@@ -12,6 +12,9 @@ if TYPE_CHECKING:
 
 class Est_fld_debug(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
+        """
+        Set the turbine state to user defined values.
+        """
         meas   = []
         from ..turbine import MINIMAL_STATES
         states = MINIMAL_STATES
@@ -20,8 +23,8 @@ class Est_fld_debug(Estimator):
         # -------------------------------------------------------------------- #
 
     def update(self):
-        self.wt.states['w_inc'] = 0
-        self.wt.states['w_fs'] = 0
+        self.wt.states['w_inc'] = np.sin(self.wt.t/32)
+        self.wt.states['w_fs']  = np.sin(self.wt.t/32)
         self.wt.states['u_inc'] = 8
         self.wt.states['u_fs']  = 8
         self.wt.states['ct']    = 0.8

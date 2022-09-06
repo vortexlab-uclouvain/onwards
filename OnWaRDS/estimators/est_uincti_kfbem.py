@@ -15,7 +15,7 @@ C2TPI    = 2. * np.pi
 CPIO180  = np.pi / 180.
 SPD2OMEG = C2TPI / 60.
 
-def amod_r(alpha):
+def _amod_r(alpha):
     """
     recompute all angles in 0-pi
     """
@@ -25,7 +25,7 @@ def amod_r(alpha):
         return alpha%(C2TPI)
     # ------------------------------------------------------------------------ #
 
-def angle_between(n, a, b):
+def _angle_between(n, a, b):
     """
     checks if angle n is between angles a and b
     """
@@ -36,6 +36,10 @@ def angle_between(n, a, b):
 
 class Est_uincti_kfbem(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
+        """
+        An estimator that computes u_inc and ti from the blade loads using a 
+        Kalman Filter coupled to a BEM code.
+        """
         meas   = ['rotSpeed', 'pitchA', 'yawA', 'theta', 'Me', 'uCx_m2D']
         states = ['u_inc', 'ti']
         req_states = [] 
@@ -78,8 +82,8 @@ class Est_uincti_kfbem(Estimator):
                              + f' does not exist or is not supported currently' )        
         
         # Initialisation of the Kalman filter (one for each blade)
-        theta = amod_r( np.linspace(0, C2TPI , self.n_sec+1) + self.offset_sec )
-        self._sectors = [ Sector(self, theta[i_s:i_s+2], u0, ti0, f, h) 
+        theta = _amod_r( np.linspace(0, C2TPI , self.n_sec+1) + self.offset_sec )
+        self._sectors = [ _Sector(self, theta[i_s:i_s+2], u0, ti0, f, h) 
                                                for i_s in range(self.n_sec)    ]
         # -------------------------------------------------------------------- #
 
@@ -111,12 +115,12 @@ class Est_uincti_kfbem(Estimator):
         self.wt.states['ti' ] = np.sqrt( sum( s.get_ti(self.u_ref) for s in self._sectors )/(self.n_sec-1) )/self.u_ref
         # -------------------------------------------------------------------- #
 
-class Sector():
+class _Sector():
     def __init__(self, u_est, theta, u0, ti0, f, h):
         self.u_est = u_est # parent rotor streamwise veclocity estimator
         self.theta = theta # sector bounds 
 
-        self.ekf = SectorEKF(u0, f, h)
+        self.ekf = _SectorEKF(u0, f, h)
 
         self.it     = -1
         self.t_prev = -1e16
@@ -156,7 +160,7 @@ class Sector():
         # -------------------------------------------------------------------- #
 
     def in_bounds(self, theta):
-        return angle_between(theta, *self.theta)
+        return _angle_between(theta, *self.theta)
         # -------------------------------------------------------------------- #
 
     def get_u(self):
@@ -172,7 +176,7 @@ class Sector():
         return np.sum((self.u_se_buffer[idx%self.u_est.n_t] - u_ref)**2)
         # -------------------------------------------------------------------- #
     
-class SectorEKF():
+class _SectorEKF():
     def __init__(self, u0, f, h):
         P_0  = np.array([[10.]])
         u_0  = np.array([[u0]])

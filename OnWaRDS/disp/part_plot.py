@@ -21,6 +21,14 @@ class Part_plot(Viz):
     vel_str_id = ['u', 'w']
 
     def __init__(self, farm: Farm, *args, **kwargs):
+        """ Plots the position of the wake and ambient flow particles
+
+        Parameters
+        ----------
+        farm : Farm
+            Parent Farm Object
+        """        
+
         super().__init__(farm)
 
         self.fig, self.axs = plt.subplots(3, 1, sharex=True)

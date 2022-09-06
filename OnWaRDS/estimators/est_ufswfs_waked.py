@@ -15,12 +15,13 @@ CT_LIM = 24/25
 
 class Est_ufswfs_waked(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
+        """
+        Corrects the ambient streamwise velocity if the wind turbine is waked. 
+        """
         meas   = []
         states = ['u_fs', 'w_fs']
         req_states = ['u_inc', 'w_inc'] 
         super().__init__(wt, meas, states, req_states, avail_states)
-
-        # should check if wake model is defined
 
     def update(self):
         if self.wt.is_freestream(): 
@@ -31,8 +32,7 @@ class Est_ufswfs_waked(Estimator):
                                                           np.array(self.wt.x[0]), 
                                                           np.array(self.wt.x[2]), filt='rotor', i_wt_exclude=self.wt.i)[0]
             self.wt.states['w_fs'] = self.wt.states['w_inc']
-        # self.wt.states['w_fs'] = 0
-        # self.wt.states['w_inc'] = 0
+
 
 
 

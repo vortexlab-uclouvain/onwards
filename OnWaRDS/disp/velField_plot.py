@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 PLANE_ID = 'plane00'
 PLOTZERO = True
+SAVE_DIR = 'velField_slices'
 
 class VelField_plot(Viz):
     farm: Farm
@@ -23,8 +24,8 @@ class VelField_plot(Viz):
 
     def __init__(self, farm: Farm, vel_bnds: list, comp: int, bf_dir:str=False, 
                  mp4_export:bool=True, skip:int=1, t_start:float=False, 
-                 skeleton: bool=False, slice_export: bool=False,
-                 enable_anim: bool=False, du_export: bool=False,):
+                 skeleton: bool=False, slice_export: bool=True,
+                 enable_anim: bool=True, du_export: bool=False,):
         
         
         super().__init__(farm)
@@ -41,8 +42,8 @@ class VelField_plot(Viz):
             if not self.farm.out_dir:
                 raise ValueError('mp4_export can not be set to True if no output directory is specified in farm.')
             self.frame_id = 0
-            if not os.path.exists(f'{self.out_dir}/velField_frame/'):
-                os.makedirs(f'{self.out_dir}/velField_frame/')
+            if not os.path.exists(f'{self.out_dir}/{SAVE_DIR}/'):
+                os.makedirs(f'{self.out_dir}/{SAVE_DIR}/')
 
         # -- Slice export -- #
         self.slice_export = slice_export
@@ -108,7 +109,7 @@ class VelField_plot(Viz):
         plt.tight_layout()
 
         if self.slice_export:
-            np.save(f'{self.out_dir}/slices/x_f3.npy', 
+            self.__save_slice__('x_f3.npy', 
                  np.array([self.grid._x, self.grid._z], dtype=object))
             self.slice_acc_f3 = np.zeros_like(uu_f3)
 
@@ -172,8 +173,7 @@ class VelField_plot(Viz):
             self.plt_wt_bf = self._set_layout(plt.gca(), self.im_bf, skip_x=False)
 
         if self.slice_export:
-            _x_vec = [x-o for x, o in zip(x_vec, self.farm.zero_origin)] 
-            np.save(f'{self.out_dir}/slices/x_bf.npy', np.array(_x_vec, dtype=object))
+            self.__save_slice__('x_bf.npy', np.array(x_vec, dtype=object))
             self.slice_acc_bf = np.zeros_like(u_vec_fld.squeeze())
         # -------------------------------------------------------------------- #
 
@@ -225,11 +225,10 @@ class VelField_plot(Viz):
         if not self.farm.update_LagSolver_flag: return
 
         self.time = self.farm.t
-        time_adim = 100000#self.time/self.farm.af.D*self.farm.u_h
+
         if self.enable_anim:
             plt.figure(self.fig.number)
-        self.time_txt.set_text(r'$t={'+f'{self.time:2.1f}'+r'}\; [s] = {'
-                                                +f'{time_adim:2.2f}'+'} \;T_{c}$')
+        self.time_txt.set_text(r'$t={'+f'{self.time:2.1f}'+r'}\; [s]$')
 
         if (self.farm.it%self.skip)>0 or self.time<self.t_start: 
             return 
@@ -256,26 +255,27 @@ class VelField_plot(Viz):
                                                np.linspace(*self.vel_bnds,7),
                                                vmin=self.vel_bnds[0], vmax=self.vel_bnds[1], 
                                                **self._skeleton_args    )
+
         if self.mp4_export and self.enable_anim:
-            self.savefig(f'/velField_frame/frame{self.frame_id:03d}.png', dpi=200)
+            self.savefig(f'/{SAVE_DIR}/frame{self.frame_id:03d}.png', dpi=200)
             self.frame_id += 1
 
         if self.slice_export:
-            np.save(f'{self.out_dir}/slices/u_f3_{self.slice_id}.npy', 
+            self.__save_slice__('u_f3_{self.slice_id}.npy', 
                                   np.array([self.time, uu_f3], dtype=object))
             self.slice_acc_f3 += uu_f3 
             if self.bf_dir: 
-                np.save(f'{self.out_dir}/slices/u_bf_{self.slice_id}.npy', 
+                self.__save_slice__('u_bf_{self.slice_id}.npy', 
                                      np.array([self.time, uu_bf], dtype=object))
                 self.slice_acc_bf += uu_bf
 
         if self.du_export:
             duu_f3 = self.grid.du_wm_compute()[self.comp]
-            np.save(f'{self.out_dir}/slices/du_f3_{self.slice_id}.npy', 
+            self.__save_slice__('du_f3_{self.slice_id}.npy', 
                                 np.array([self.time, duu_f3], dtype=object))
             if self.bf_dir: 
                 duu_bf = self.er_abl.getField('Vel',self.comp)[0].squeeze()[:-1,:] - uu_bf
-                np.save(f'{self.out_dir}/slices/du_bf_{self.slice_id}.npy', 
+                self.__save_slice__('du_bf_{self.slice_id}.npy', 
                                     np.array([self.time, duu_bf], dtype=object))
 
         if self.du_export or self.slice_export:
@@ -286,9 +286,10 @@ class VelField_plot(Viz):
         
     def plot(self):
         if self.slice_export:
-            np.save(f'{self.out_dir}/slices/u_f3_avg.npy', 
-                                                self.slice_acc_f3/self.slice_id)
+            self.__save_slice__('u_f3_avg.npy', self.slice_acc_f3/self.slice_id)
             if self.bf_dir: 
-                np.save(f'{self.out_dir}/slices/u_bf_avg.npy', 
-                                                    self.slice_acc_bf/self.slice_id)
+                self.__save_slice__('u_bf_avg.npy', self.slice_acc_bf/self.slice_id)
         # -------------------------------------------------------------------- #
+
+    def __save_slice__(self, fid, array, *args, **kwargs):
+       np.save(f'{self.out_dir}/{SAVE_DIR}/{fid}', array, *args, **kwargs)

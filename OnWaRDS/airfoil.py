@@ -11,18 +11,18 @@ DATA = { 'NREL': {'Rtip':63., 'Rhub':1.5, 'nB':3, 'Rhub_forTL':8.3333 } }
 
 class Airfoil:
     # ----------------------- __init__ ------------------------ #
-    def __init__(self, blade_name):
+    def __init__(self, blade_name: str):
         """
         Inits Airfoil
 
         Parameters
         ----------
-        blade_name : string
+        blade_name : str
             name of the blade profile defined in `DATA` (eg: "NREL")  
 
         Note
         ----
-        This is the minimal configuration of the `Airfoil` class (hence: 
+        This is the minimal configuration of the Airfoil class (hence: 
         minimal_config=True).
         """
         self.minimal_config = True
@@ -54,4 +54,5 @@ class _c_Airfoil(ctypes.Structure):
     def __init__(self, af: Airfoil):
         for f in self._fields_: setattr(self, f[0], getattr(af, f[0]))
 
-c_Airfoil_p = ctypes.POINTER(_c_Airfoil)
+c_Airfoil_p = ctypes.POINTER(_c_Airfoil) 
+""" ctypes Airfoil pointer """

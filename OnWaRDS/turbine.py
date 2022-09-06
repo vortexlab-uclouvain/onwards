@@ -10,11 +10,11 @@ from .      import estimators
 from .utils import LoggingDict
  
 if TYPE_CHECKING:
-    from typing  import List
-    from .farm   import Farm
-    from .sensor import Sensors
+    from typing   import List
+    from .farm    import Farm
+    from .sensors import Sensors
 
-# MINIMAL_STATES contains the estimated wind turbine states s_WT required by the 
+# MINIMAL_STATES contains the estimated wind turbine states s_wt required by the 
 # LagSolver 
 MINIMAL_STATES = [ 'u_inc', 'u_fs', 'w_inc', 'w_fs', 'ct', 'ti', 'yaw' ]
 
@@ -24,21 +24,31 @@ class Turbine:
     estimators : List[estimators.Estimator]
     est_export : estimators.StateExportBuffer
 
+
     def __init__(self, farm: Farm, i_wt: int, snrs_args: dict, est_args:list):
         """ Inits Turbine
+
+        The Turbine object gathers the wind turbines measurements, m_wt,  and translates 
+        them into the estimated wind turbine state, s_wt.
 
         Parameters
         ----------
         farm : Farm
-            parent farm
+            Parent farm object.
         i_wt : int
-            index of the wind turbine (in the `farm` object)
+            Index of the wind turbine (in the `farm` object).
         snrs_args : dict
-            dict containing the sensor parameters (cfr: sensor). `Sensors` 
-            type retrieved from snrs_args['type']
+            Dictionary containing the parameters used for the turbines Sensors 
+            initialization (see :class:`Sensors<.Sensors>`).
         est_args : dict
-            dict containing the estimators parameters (cfr: estimators/est_myEst). 
-           `Estimator` type retrieved from dict['type']
+            Dictionary containing the parameters used for the turbines Estimators 
+            initialization (see :class:`Estimator<.estimators.estimator.Estimator>`).
+        
+        See also
+        --------
+        :obj:`__init_sensors__<.turbine.Turbine.__init_sensors__>`,
+        :obj:`__init_states__<.turbine.Turbine.__init_states__>`,
+        :obj:`init_LagSolver<.turbine.Turbine.init_LagSolver>`
         """
         lg.info(f'Initializing WT {i_wt+1}/{farm.n_wts}')
         self.farm     = farm
@@ -53,8 +63,16 @@ class Turbine:
         self.__init_states__(est_args)
         # -------------------------------------------------------------------- #
 
-    def reset(self, ini_states):
-        
+    def reset(self, ini_states: dict[str, float]={}):       
+        """ Reset the wind turbines.
+
+        Parameters
+        ----------
+        ini_states : dict[str, float], optional
+            {'s_wt_i': v} maps the wind turbine state, s_wt_i, to its initial 
+            value, v.
+        """        
+
         # Reset sensors
         self.snrs.reset()
         self.t = self.snrs.get_buffer_data('time')
@@ -64,9 +82,8 @@ class Turbine:
             e.reset()
 
         self.update_states()
-        if 'ini_states' in ini_states:
-            for s in ini_states:
-                self.states[s] = ini_states[s]
+        for s in ini_states:
+            self.states[s] = ini_states[s]
 
         # Update communicator
         self.update_LagSolver()
@@ -75,44 +92,53 @@ class Turbine:
     def __init_sensors__(self, snrs_args: dict):
         """ Inits the Turbine's Sensors
 
-        Sensors allow to access some measurement m at the current time t
-        using the get_buffer_data('m') method
+        :class:`Sensors<.Sensors>` provide easy interfacing between OnWaRDS 
+        and the data source allow to access some measurement, m_wt, at the current 
+        time, t, using the get_buffer_data('m_wt') method.
 
         Parameters
         ----------
         snrs_args : dict
-            dict contains the sensor parameters (cfr: sensor/Sensors). `Sensors` 
-            type retrieved from snrs_args['type']
+            Dictionary containing the parameters used for the turbines Sensors 
+            initialization (see :class:`Sensors<.Sensors>`).
 
         Returns
         -------
         fs : float 
-            sampling frequency in [Hz]
+            Sampling frequency in [Hz].
         t : float
-            time [s] 
+            Time [s]. 
         snrs: list of Sensors
-            list of n_wt sensors (one sensor object per WT)
+            List of n_wt sensors (one sensors object per WT)
 
         Note
         ----
         Custom Sensors can be defined by the user following the example provided 
-        hereunder for MySensors
+        hereunder for MySensors::
+            if snrs_type=='MySensors':
+               from sensors import MySensors
+               self.snrs = MySensors()
+
+        See also
+        --------
+        :class:`Sensors<.Sensors>`
         """
+
         if   snrs_args['type']=='SensorsPy':
-            from .sensor import SensorsPy
-            snrs_fid = f'{self.farm.data_dir}/sensorData_{self.i_bf}.npy' 
+            from .sensors import SensorsPy
+            snrs_fid = f'{self.farm.data_dir}/sensorsData_{self.i_bf}.npy' 
             self.snrs = SensorsPy(snrs_fid, **snrs_args)
 
         elif snrs_args['type']=='SensorsPreprocessed':
-            from .sensor import SensorsPreprocessed
+            from .sensors import SensorsPreprocessed
             self.snrs = SensorsPreprocessed(self.i_bf, self.farm.data_dir, **snrs_args)
 
-        # elif snrs_type=='MySensors': # custom sensor class example
-        #     from sensor import MySensors
+        # elif snrs_type=='MySensors': # custom sensors class example
+        #     from sensors import MySensors
         #     self.snrs = MySensors()
         
         else:
-            raise ValueError('Sensor type not recognized.')
+            raise ValueError('Sensors type not recognized.')
 
         self.fs   = self.snrs.fs
         self.t    = self.snrs.get_buffer_data('time')
@@ -120,7 +146,7 @@ class Turbine:
 
     def update_sensors(self):
         """
-        Update the Turbine's sensor
+        Update the Turbine's sensors
         """
         self.t = self.snrs.iterate()
         return self.t
@@ -129,32 +155,55 @@ class Turbine:
     def __init_states__(self, est_args: dict):
         """ Inits the Turbine's Estimators
         
-        Estimators allows to translate the wind measurements into the actual 
-        wind turbine states (used as part of the wake model computation).
+        :class:`Estimators<.estimator.Estimator>` allow to translate the wind 
+        measurements, m_wt, into the estimated wind turbine states, s_wt.
 
         Parameters
         ----------
         est_args : dict
-            dict containing the description of the estimators used 
-        est_args['n_substeps'] : int, default 1
-            number of (sensor) time steps between two successive states update. 
-        est_args['estimatiori'] : dict 
-            Estimator parameters (cfr: Sensors) where `i` is the estimator index. 
-            Estimator type retrieved from dict['type']
+            Dictionary containing the parameters used for the turbines Estimators 
+            initialization.
+
+            Available fields:
+            
+            :estimatiori:       *(dict)* - 
+                Estimator parameters (cfr: Sensors) where i is the estimator index. 
+                Estimator type retrieved from dict['type']. At least one estimator 
+                is required
+            :n_substeps:        *(int, optional)* - 
+                Number of (sensors) time steps between two successive states 
+                update, by default 1.
+            :export:            *(str, optional)* - 
+                Export flag, by default False. If set to a string, the wind 
+                turbine's estimated state, s_wt, is exported to the export_dir
+                subdirectory (see :class:`SensorsPreprocessed<.sensors.SensorsPreprocessed>`).
+            :export_overwrite:  *(bool, optional)* - 
+                overwrite data if set to True, by default False.
+            :export_user_field: *(List[str], optional)* - 
+                List of the measurements, not part of the wind turbine state, s_wt, 
+                that should be appended to the exported state vector.
+
+        Raises
+        ------
+        Exception 
+            If some of the state defined by MINIMAL_STATES are not computed.
 
         Note
         ----
         Custom Estimators can be defined by the user following the example 
         provided hereunder and following the `Estimator` class specifications. 
+
         Estimators are applied recursively starting from the first `estimator0` 
         to `estimatorn`. The states are updated accordingly as some Estimator 
         might rely on previous state estimation to compute their output state. 
         eg: ct estimations are likely to depend on estimation of the rotor 
         effective wind speed.   
 
-        Raises
-        ------
-        Exception if the minimal state, `MINIMAL_STATES`, is not computed.
+        See also
+        --------
+        :class:`Estimator<.estimator.Estimator>`, 
+        :class:`SensorsPreprocessed<.sensors.SensorsPreprocessed>`, 
+        :class:`StateExportBuffer<.estimators.state_export.StateExportBuffer>`
         """
         avail_states    = []
         self.estimators = []
@@ -195,11 +244,9 @@ class Turbine:
         self.states         = {a: 0.0 for a in avail_states}
         self.n_substeps_est = est_args.setdefault('n_substeps', 1)
 
-        est_args['export_dir'] = est_args.get('export_dir', False)
         if 'export' in est_args:
             self.est_export = estimators.StateExportBuffer(self, 
                                               est_args['export'], 
-                                              export_dir=est_args['export_dir'],
                                               export_overwrite=est_args.get('export_overwrite',False),
                                               states_user=est_args.get('export_user_field',[]))
         else:
@@ -216,7 +263,7 @@ class Turbine:
 
     def update_states(self):
         """
-        Update the Turbine's state
+        Updates the Turbine's state, s_wt.
         """
         for e in self.estimators: 
             e.update()
@@ -227,6 +274,10 @@ class Turbine:
         # -------------------------------------------------------------------- #
 
     def init_LagSolver(self):
+        """
+        Inits the LagSolver communicator that allows ctypes to access s_wt for 
+        the current turbine.
+        """        
         if self.farm.lag_solver:
             from .lagSolver import add_WindTurbine, c_Turbine
             self.c_wt = c_Turbine( self, **self.states ) 
@@ -234,17 +285,36 @@ class Turbine:
         # -------------------------------------------------------------------- #
 
     def update_LagSolver(self):
+        """
+        Updates the LagSolver communicator.
+        """        
         self.c_wt.update(**self.states)
         # -------------------------------------------------------------------- #
         
-    def get_bounds(self):
+    def get_bounds(self) -> List[float]:
+        """
+        Return the position (x, z) of the tip of the turbines blades.
+
+        Returns
+        -------
+        List[float]
+            The position (x, z) of the tip of the turbines blades given the 
+            current rotor orientation.
+        """        
         theta = np.deg2rad(self.states['yaw'])
         tmp = np.array([-1,1]) * self.af.R
         return [ self.x[0] + tmp*np.sin(theta), 
                  self.x[2] + tmp*np.cos(theta) ]
         # -------------------------------------------------------------------- #
 
-    def is_freestream(self):
+    def is_freestream(self) -> bool:
+        """ Check if the wind turbine is waked or not
+
+        Returns
+        -------
+        bool
+            False if an impinging wake was detected else True.
+        """
         if getattr(self.farm,'lag_solver',False): return bool(self.c_wt.is_fs)
         else:                                     return True
         # -------------------------------------------------------------------- #

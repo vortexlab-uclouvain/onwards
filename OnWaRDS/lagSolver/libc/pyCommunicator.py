@@ -12,7 +12,7 @@ c_double_pp = POINTER(c_double_p)
 from ...airfoil import c_Airfoil_p
 from ...turbine import MINIMAL_STATES, Turbine
 
-cLib = ctypes.CDLL(os.environ['ONWARDS_PATH']+'/OnWaRDS/lagSolver/libc/lagSolver.so') 
+_ls_lib = ctypes.CDLL(os.environ['ONWARDS_PATH']+'/OnWaRDS/lagSolver/libc/lagSolver_c.so') 
 # ---------------------------------------------------------------------------- #
 
 class Vec():
@@ -52,12 +52,12 @@ c_Sensors_p = POINTER(c_Sensors)
 # ---------------------------------------------------------------------------- #
 
 class c_Turbine(ctypes.Structure):
-    _fields_ = [ ("i",         c_int      ),
-                 ("is_fs",     c_int      ),
-                 ("t",         c_double   ),
-                 ("c_x_p",     c_double_p ),
-                 ("c_af_p",    c_Airfoil_p),
-                 ("c_snrs_p",  c_Sensors_p) ]
+    _fields_ = [ ('i',         c_int      ),
+                 ('is_fs',     c_int      ),
+                 ('t',         c_double   ),
+                 ('c_x_p',     c_double_p ),
+                 ('c_af_p',    c_Airfoil_p),
+                 ('c_snrs_p',  c_Sensors_p) ]
 
     def __init__(self, wt: Turbine, **kwargs):
         super().__init__()
@@ -156,7 +156,7 @@ class c_Set(ctypes.Structure):
             if self._fields_types_map_[f]==c_int   :
                 setattr( self, f,   int( model_args_new[f] ) )
         
-            lg.error(f'updating field {f}')
+            lg.info(f'updating field {f} = {model_args_new[f]}')
         # -------------------------------------------------------------------- #
 
     def free(self):
@@ -168,8 +168,8 @@ c_Set_p = POINTER(c_Set)
 
 class c_LagSolver(ctypes.Structure): 
     # Opaque structure
-    _fields_ = [ ('n_wt',c_int),
-                 ('t',c_double) ]
+    _fields_ = [ ('n_wt', c_int   ),
+                 ('t',    c_double) ]
 
 c_LagSolver_p = POINTER(c_LagSolver)
 
@@ -211,28 +211,48 @@ c_WakeModel_p = POINTER(c_WakeModel)
 
 # ---------------------------------------------------------------------------- #
 
-# Structure initialization
-cLib.init_LagSolver.argtypes = [c_int, c_Set_p]
-cLib.init_LagSolver.restype  = c_LagSolver_p
+# Initialization functions
+_ls_lib.init_LagSolver.argtypes = [c_int, c_Set_p]
+_ls_lib.init_LagSolver.restype  = c_LagSolver_p
+init_LagSolver = _ls_lib.init_LagSolver
 
-cLib.add_WindTurbine.argtypes = [c_LagSolver_p, c_Turbine_p]
-cLib.add_WindTurbine.restype  = None
+_ls_lib.add_WindTurbine.argtypes = [c_LagSolver_p, c_Turbine_p]
+_ls_lib.add_WindTurbine.restype  = None
+add_WindTurbine = _ls_lib.add_WindTurbine
 
-cLib.get_FlowModel.argtypes = [c_LagSolver_p, c_Turbine_p]
-cLib.get_FlowModel.restype  = c_FlowModel_p
+_ls_lib.get_FlowModel.argtypes = [c_LagSolver_p, c_Turbine_p]
+_ls_lib.get_FlowModel.restype  = c_FlowModel_p
+get_FlowModel = _ls_lib.get_FlowModel
 
-cLib.get_WakeModel.argtypes = [c_LagSolver_p, c_Turbine_p]
-cLib.get_WakeModel.restype  = c_WakeModel_p
-
-
-
-cLib.update_LagSolver.argtypes = [c_LagSolver_p]
-cLib.update_LagSolver.restype  = None
+_ls_lib.get_WakeModel.argtypes = [c_LagSolver_p, c_Turbine_p]
+_ls_lib.get_WakeModel.restype  = c_WakeModel_p
+get_WakeModel = _ls_lib.get_WakeModel
 
 # Free memory
-cLib.free_LagSolver.argtypes = [c_LagSolver_p]
-cLib.free_LagSolver.restype  = None
+_ls_lib.free_LagSolver.argtypes = [c_LagSolver_p]
+_ls_lib.free_LagSolver.restype  = None
+free_LagSolver = _ls_lib.free_LagSolver
 
-cLib.rews_compute.argtypes = [c_LagSolver_p, c_double_p, c_double]
-cLib.rews_compute.restype  = c_double
+# Updating model's state
+_ls_lib.update_LagSolver.argtypes = [c_LagSolver_p]
+_ls_lib.update_LagSolver.restype  = None
+update_LagSolver = _ls_lib.update_LagSolver
+
+_ls_lib.reset_LagSolver.argtypes = [c_LagSolver_p]
+_ls_lib.reset_LagSolver.restype  = None
+reset_LagSolver = _ls_lib.reset_LagSolver
+
+# Computing flow field
+_ls_lib.rews_compute.argtypes = [c_LagSolver_p, c_double_p, c_double]
+_ls_lib.rews_compute.restype  = c_double
+rews_compute = _ls_lib.rews_compute
+
+_ls_lib.interp_vec_WakeModel.argtypes = [c_LagSolver_p, c_double_p, c_double_p, c_int, c_double_p]
+_ls_lib.interp_vec_WakeModel.restype  = None
+interp_vec_WakeModel = _ls_lib.interp_vec_WakeModel
+
+_ls_lib.interp_vec_FlowModel.argtypes = [c_LagSolver_p, c_double_p, c_double_p, c_int, c_double_p, c_int, c_int]
+_ls_lib.interp_vec_FlowModel.restype  = None
+interp_vec_FlowModel = _ls_lib.interp_vec_FlowModel
+
 # ---------------------------------------------------------------------------- #

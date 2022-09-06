@@ -12,10 +12,60 @@ if TYPE_CHECKING:
     from ..turbine import Turbine
 
 class StateExportBuffer():
-    def __init__(self, wt: Turbine, export: str, export_dir:str=False, export_overwrite:bool=False, states_user:List[str]=[]):
+    def __init__(self, wt: Turbine, export: str, export_overwrite:bool=False, states_user:List[str]=[]):
+        """ Saves the wind turbine estimated states for future simulations. 
 
-        self.export_dir  = export_dir if export_dir else \
-                                                  f'{wt.farm.data_dir}/{export}/'
+        Along with the :class:`SensorsPreprocessed<.sensors.SensorsPreprocessed>` 
+        class, it allows to read data from preprocessed estimated 
+        turbine states in which case m_wt = s_wt.
+
+        This allows for fast computations when evaluating the performances 
+        of the Lagrangian (ie: skips the turbine states estimation step).
+
+        Parameters
+        ----------
+        wt : Turbine
+            Parent Turbine object.
+        export : str
+            Export flag, by default False. If set to a string, the wind 
+            turbine's estimated stat
+        export_overwrite : bool, optional
+            Overwrite data if set to True, by default False.
+        states_user : List[str], optional
+            List of the measurements, not part of the wind turbine state, s_wt, 
+            that should be appended to the exported state vector.
+
+        Raises
+        ------
+        OSError
+            If the export directory already exist.
+        ValueError
+            If a conflict is detected between states_user and Turbine.states
+
+        Example
+        -------
+        Once an Estimator has been exported exported:
+            >>> est_args =  { 
+            >>>     'export'     : 'my_dir',
+            >>>     'export_overwrite' : True,
+            >>>     'export_user_field': ['myField']
+            >>>     ...
+            >>>     }
+
+        One may load it using:
+            >>> snrs_args = {
+            >>>     'type':   'SensorsPreprocessed',
+            >>>     'export': 'my_dir'
+            >>>     }  
+            >>> est_args  = {    
+            >>>     'estimator0' : {'type':'fld_fromdata',  
+            >>>                     'meas_in':MINIMAL_STATES,  
+            >>>                     'state_out':MINIMAL_STATES}
+            >>>     ...
+            >>>     }
+        """
+
+        self.export_dir = f'{wt.farm.data_dir}/{export}/'
         if wt.i==0:
             if os.path.exists(self.export_dir):
                 if not export_overwrite:
@@ -49,6 +99,9 @@ class StateExportBuffer():
         # -------------------------------------------------------------------- #
 
     def update(self):
+        """
+        Updates the StateExportBuffer object.
+        """
         for s in self.states:
             self.data[s][self._idx] = self.states[s]
         for s in self.states_user:
@@ -57,6 +110,9 @@ class StateExportBuffer():
         # -------------------------------------------------------------------- #
 
     def save(self):
+        """
+        Exports the StateExportBuffer object.
+        """
         self.data['fs'] = self.fs
         self.data['t0'] = self.t0
         np.save( f'{self.export_dir}/{self.export_name}', self.data )
