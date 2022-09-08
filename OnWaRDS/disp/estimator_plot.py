@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 import logging
 
-from OnWaRDS.turbine import MINIMAL_STATES 
+from ..turbine import MINIMAL_STATES 
 lg = logging.getLogger(__name__)
 
 import numpy as np

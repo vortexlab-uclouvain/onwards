@@ -94,7 +94,7 @@ class Turbine:
 
         :class:`Sensors<.Sensors>` provide easy interfacing between OnWaRDS 
         and the data source allow to access some measurement, m_wt, at the current 
-        time, t, using the get_buffer_data('m_wt') method.
+        time, t, ``using the get_buffer_data('m_wt')`` method.
 
         Parameters
         ----------

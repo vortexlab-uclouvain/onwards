@@ -1,6 +1,4 @@
-AFL_SRC_PATH = $(AFL_PATH)/airfoilLib/src
-AFL_OBJ = $(AFL_SRC_PATH)/airfoilLib.o
-CFLAGS = -I $(AFL_SRC_PATH) -O3
+CFLAGS = -O3
 
 CC = gcc
 CCLINK = gcc
@@ -24,9 +22,10 @@ display:
                                                  
                                                  
 wakeModel.so: $(OBJ)
-	$(CCLINK) $(CFLAGS) -shared -lreadINIFile -o lagSolver.so $(_OBJ) $(AFL_OBJ)
+	$(CCLINK) $(CFLAGS) -shared -o lagSolver.so $(_OBJ) $(AFL_OBJ)
 
 %.o: src/%.c 
+	mkdir -p obj
 	$(CC) $(CFLAGS) -c -o obj/$@ -Wall -Werror -fpic $^ 
 
 .PHONY: clean

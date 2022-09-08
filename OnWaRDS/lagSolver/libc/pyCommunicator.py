@@ -12,7 +12,7 @@ c_double_pp = POINTER(c_double_p)
 from ...airfoil import c_Airfoil_p
 from ...turbine import MINIMAL_STATES, Turbine
 
-_ls_lib = ctypes.CDLL(os.environ['ONWARDS_PATH']+'/OnWaRDS/lagSolver/libc/lagSolver_c.so') 
+_ls_lib = ctypes.CDLL(os.environ['ONWARDS_PATH']+'/onwards/lagSolver/libc/lagSolver_c.so') 
 # ---------------------------------------------------------------------------- #
 
 class Vec():

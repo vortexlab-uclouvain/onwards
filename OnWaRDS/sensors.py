@@ -21,6 +21,10 @@ class Sensors():
         fs: float, optional
             Sampling frequency in [Hz]. If None, the original time sampling
             is preserved, by default None.
+
+        See also
+        --------
+        :obj:`Turbines.__init_sensors__<.turbine.Turbine.__init_sensors__>`
         """
         self.fs = fs
         raise NotImplementedError

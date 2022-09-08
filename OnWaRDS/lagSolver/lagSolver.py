@@ -307,8 +307,8 @@ class LagSolver():
         zv : np.array
             array containing the z locations where the field should be evaluated.
         filt : str, optional
-            'flow' or 'rotor' depending on the width of the filter used for the 
-            ambient velocity field computation, by default 'flow'.
+            ``flow`` or ``rotor`` depending on the width of the filter used for the 
+            ambient velocity field computation, by default ``flow``.
         buffer : py_comm.Vec, optional
             Vec object allocating the output memory location (allows not to 
             reallocate the wind farm global grid at every time step), buffer 

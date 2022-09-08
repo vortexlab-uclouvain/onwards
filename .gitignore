@@ -1,5 +1,8 @@
-# VS code
+# IDE configuration
 .vscode
+
+# macOS
+.DS_Store
 
 # compiled files
 __pycache__
@@ -9,3 +12,9 @@ __pycache__
 
 # OnWaRDS file
 .runid
+
+# doc
+doc/build
+
+# local folder
+local/*

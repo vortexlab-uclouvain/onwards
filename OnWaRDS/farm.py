@@ -75,7 +75,7 @@ class Farm:
         out_dir : str, optional
             Export directory name where figures and data are saved. 
             If '': all exports are disabled, if None: default export directory 
-            name (OnWaRDS_run_id), by default None.
+            name (onwards_run_id), by default None.
         enable_logger : bool, optional
             If true, logs are saved to the export directory, by default True.
 
@@ -88,7 +88,7 @@ class Farm:
         -------
         Typical OnWaRDS initialization:
 
-            >>> from OnWaRDS import Farm
+            >>> from onwards import Farm
             >>> with Farm() as f:
             >>>    v.viz_add('MyViz') 
             >>>    for t in f:
@@ -183,7 +183,7 @@ class Farm:
         int
             Current run id.
         """        
-        run_id_path = f'{os.environ["ONWARDS_PATH"]}/.runid'
+        run_id_path = f'{os.environ["ONWARDS_PATH"]}/onwards/.runid'
 
         try:                        fid = open(run_id_path)
         except FileNotFoundError:   run_id = 0
@@ -208,7 +208,7 @@ class Farm:
         enable_logger : bool
             If true, logs are saved to the export directory.
         """        
-        self.out_dir = f'{data_dir}/OnWaRDS_run_{self.__get_runid__()}' \
+        self.out_dir = f'{data_dir}/onwards_run_{self.__get_runid__()}' \
                                                  if out_dir is None else out_dir
         if self.out_dir and not os.path.exists(self.out_dir):
             lg.info(f'Data exported to {self.out_dir}.')
