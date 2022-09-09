@@ -8,7 +8,7 @@ OBJ = lagSolver.o flowModel.o wakeModel.o speedDeficit.o communicator.o
 
 _OBJ = $(patsubst %,obj/%,$(OBJ))
 
-default: display wakeModel.so
+default: display lagSolver_c.so
 
 display: 
 	@echo "  ____    __          __   _____  _____   _____ "
@@ -21,8 +21,8 @@ display:
 	@echo ""
                                                  
                                                  
-wakeModel.so: $(OBJ)
-	$(CCLINK) $(CFLAGS) -shared -o lagSolver.so $(_OBJ) $(AFL_OBJ)
+lagSolver_c.so: $(OBJ)
+	$(CCLINK) $(CFLAGS) -shared -o lagSolver_c.so $(_OBJ) $(AFL_OBJ)
 
 %.o: src/%.c 
 	mkdir -p obj

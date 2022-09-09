@@ -18,4 +18,3 @@ Grid
    :undoc-members:
    :show-inheritance:
    :exclude-members: farm, set, lag_solver
-

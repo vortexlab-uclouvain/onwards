@@ -1,7 +1,7 @@
 Airfoil
 =======
 
-.. automodule:: onwards.airfoil
+.. autoclass:: onwards.Airfoil
    :members:
    :undoc-members:
    :show-inheritance:

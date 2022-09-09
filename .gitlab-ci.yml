@@ -1,0 +1,13 @@
+image: immc/onwards-doc:v0.2
+
+pages:
+  script:
+  - export REPO_PATH=$(pwd)
+  - make -C onwards/lagSolver/libc/
+  - export ONWARDS_PATH=$(pwd)
+  - sphinx-build -b html docs/source public
+  artifacts:
+    paths:
+    - public
+  only:
+  - main
