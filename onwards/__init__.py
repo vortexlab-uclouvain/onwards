@@ -1,3 +1,4 @@
 from .farm    import Farm
-from .sensors import Sensors
 from .turbine import Turbine
+from .airfoil import Airfoil
+from .sensors import Sensors

@@ -11,7 +11,7 @@ import numpy as np
 from .turbine   import Turbine
 from .airfoil   import Airfoil
 from .lagSolver import LagSolver 
-from .viz       import Viz
+from .vizs       import Viz
 from .utils     import LoggingDict, dict2txt
 
 if TYPE_CHECKING:
@@ -254,17 +254,17 @@ class Farm:
         """        
         _viz_type = viz_type.lower()
         if   _viz_type == 'part':
-            from .viz.part_plot       import Viz_particles               as Viz
+            from .vizs.particles  import Viz_particles       as Viz
         elif _viz_type == 'velfield':
-            from .viz.velField_plot   import VelField_plot           as Viz
+            from .vizs.velfield   import VelField_plot       as Viz
         elif _viz_type == 'wakecenterline':
-            from .viz.centerline_plot import Viz_centerline          as Viz
+            from .vizs.centerline import Viz_centerline      as Viz
         elif _viz_type == 'wakecenterline_xloc':
-            from .viz.centerline_plot import Viz_centerline_xloc as Viz
+            from .vizs.centerline import Viz_centerline_xloc as Viz
         elif _viz_type == 'rews':
-            from .viz.rews_plot       import Viz_rews               as Viz
+            from .vizs.rews       import Viz_rews            as Viz
         elif _viz_type == 'estimator':
-            from .viz.estimator_plot  import Viz_estimators          as Viz
+            from .vizs.estimators import Viz_estimators      as Viz
         else:
             raise Exception(f'viz_type {viz_type} not recognized.')
 

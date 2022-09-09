@@ -1,4 +1,5 @@
 from .lagSolver import LagSolver
+from .lagSolver import Grid
 
 # from .src import pyCommunicator as pyCom
 from .libc.pyCommunicator import c_LagSolver, c_WakeModel, c_FlowModel, c_Turbine

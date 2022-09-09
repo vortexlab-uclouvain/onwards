@@ -1,7 +1,7 @@
 Turbine
 =======
 
-.. automodule:: onwards.turbine
+.. autoclass:: onwards.Turbine
    :members:
    :undoc-members:
    :show-inheritance:

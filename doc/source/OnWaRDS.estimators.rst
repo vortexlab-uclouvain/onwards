@@ -4,7 +4,7 @@ Estimator
 Estimator (base class)
 ----------------------
 
-.. automodule:: onwards.estimators.estimator
+.. autoclass:: onwards.estimators.Estimator
    :members:
    :undoc-members:
    :show-inheritance:

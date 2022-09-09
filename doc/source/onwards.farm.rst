@@ -1,7 +1,7 @@
 Farm
 ====
 
-.. automodule:: onwards.farm
+.. autoclass:: onwards.Farm
    :members:
    :undoc-members:
    :show-inheritance:

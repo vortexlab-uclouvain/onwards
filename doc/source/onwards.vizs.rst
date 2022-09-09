@@ -4,7 +4,7 @@ Viz
 Viz (base class)
 ----------------
 
-.. automodule:: onwards.viz.viz
+.. autoclass:: onwards.vizs.Viz
    :members:
    :undoc-members:
    :show-inheritance:
@@ -13,7 +13,7 @@ Viz (base class)
 Viz_centerline
 --------------
 
-.. automodule:: onwards.viz.centerline
+.. automodule:: onwards.vizs.centerline
    :members:
    :undoc-members:
    :show-inheritance:
@@ -21,7 +21,7 @@ Viz_centerline
 Viz_estimators
 --------------
 
-.. automodule:: onwards.viz.estimator
+.. automodule:: onwards.vizs.estimators
    :members:
    :undoc-members:
    :show-inheritance:
@@ -29,7 +29,7 @@ Viz_estimators
 Viz_particles
 -------------
 
-.. automodule:: onwards.viz.particles
+.. automodule:: onwards.vizs.particles
    :members:
    :undoc-members:
    :show-inheritance:
@@ -38,7 +38,7 @@ Viz_particles
 Viz_rews
 --------
 
-.. automodule:: onwards.viz.rews
+.. automodule:: onwards.vizs.rews
    :members:
    :undoc-members:
    :show-inheritance:
@@ -46,7 +46,7 @@ Viz_rews
 Viz_velfield
 ------------
 
-.. automodule:: onwards.viz.velfield
+.. automodule:: onwards.vizs.velfield
    :members:
    :undoc-members:
    :show-inheritance:

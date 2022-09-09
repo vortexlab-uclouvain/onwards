@@ -4,7 +4,7 @@ LagSolver
 LagSolver
 ---------
 
-.. automodule:: onwards.lagSolver.lagSolver
+.. autoclass:: onwards.lagSolver.LagSolver
    :members:
    :undoc-members:
    :show-inheritance:
@@ -13,7 +13,7 @@ LagSolver
 Grid
 ----
 
-.. automodule:: onwards.lagSolver.grid
+.. autoclass:: onwards.lagSolver.Grid
    :members:
    :undoc-members:
    :show-inheritance:
