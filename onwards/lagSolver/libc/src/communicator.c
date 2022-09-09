@@ -10,8 +10,9 @@ void interp_vec_FlowModel(LagSolver *wf, double *x_vec, double *y_vec,
     double *sigma;
 
     switch (filt) {
-        case 0: {sigma = wf->fms[0]->sigma_r; break;}
-        case 1: {sigma = wf->fms[0]->sigma_f; break;}
+        case 0:  {sigma = wf->fms[0]->sigma_r; break;}
+        case 1:  {sigma = wf->fms[0]->sigma_f; break;}
+        default: {sigma = 0;                   break;}
     }
     
     int i;

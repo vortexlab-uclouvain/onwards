@@ -25,12 +25,15 @@ SpeedDeficit* init_SpeedDeficit(WakeModel *wm) {
         sd->du_xi_r    = du_xi_r_BPA;
         sd->du_xi_ravg = du_xi_ravg_BPA;
 
-    // case 1: // User Define Model
+    // case 1: // User Defined Model
         // sd->n_wv_      = 42;
         // sd->update     = update_BPA;
         // sd->du_xi      = du_xi_BPA;
         // sd->du_xi_r    = du_xi_r_BPA;
         // sd->du_xi_ravg = du_xi_ravg_BPA;
+
+    default:
+        sd->n_wv_ = 0;
     }
 
     sd->wv_   = ((double**) malloc(sizeof(double*)*sd->n_wv_));
