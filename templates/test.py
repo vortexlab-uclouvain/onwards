@@ -92,10 +92,10 @@ WM_STR_ID = 'WMcenterline_gaussianMask'
 
 with  Farm( WF_DIR,'NREL', snrs_args, est_args, model_args, 
             grid_args=grid_args, wt_cherry_picking=None    ) as wf: 
-    # wf.viz_add('part')
-    wf.viz_add('estimator', ['u_inc', 'ti'], ['uCx_m2D', 'ti_m2D'], ['u_{WT}', 'TI'], ['ms^{-1}', '\%'], offset=[31.5, 31.5], ylim=[[6, 10], [0,0.2]])
-    # wf.viz_add('velfield', [3,10], 0, skip=1, bf_dir=BF_DIR, skeleton=True )
-    # wf.viz_add('wakeCenterline_xloc', BF_DIR, WM_STR_ID, [3*126,6*126,9*126,12*126], u_norm=8.0)
+    wf.viz_add('particles')
+    wf.viz_add('estimators', ['u_inc', 'ti'], ['uCx_m2D', 'ti_m2D'], ['u_{WT}', 'TI'], ['ms^{-1}', '\%'], offset=[31.5, 31.5], ylim=[[6, 10], [0,0.2]])
+    wf.viz_add('velfield', [3,10], 0, skip=1, bf_dir=BF_DIR, skeleton=True )
+    wf.viz_add('centerline_xloc', BF_DIR, WM_STR_ID, [3*126,6*126,9*126,12*126], u_norm=8.0)
 
     for wt in wf.wts:
         xod_rews = [3,6,9]

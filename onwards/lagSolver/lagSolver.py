@@ -87,8 +87,8 @@ class LagSolver():
             :ceps:       *(float, optional)* -
                 Initial wake width tuning constant, by default 0.2
         grid_args : dict, optional
-            Dictionary containing the parameters used for the grid's initialization 
-            (see :class:`Grid<.lagSolver.grid.Grid>`).  
+            Dictionary containing the parameters used for the Grid's initialization 
+            (refer to :class:`Grid<.lagSolver.grid.Grid>`).  
 
         References
         ----------
@@ -255,7 +255,7 @@ class LagSolver():
         # -------------------------------------------------------------------- #
 
     def get_part_iwt(self, model: str) -> np.array:
-        """ Computes the mapping between the :obj:`LagSolver.get<.lagSolver.lagSolver.LagSolver.get>`
+        """ Computes the mapping between the :meth:`LagSolver.get<.lagSolver.lagSolver.LagSolver.get>`
         outputs for i_wt=None and the turbines.
 
         Parameters
@@ -276,7 +276,7 @@ class LagSolver():
 
         See also
         --------
-        :obj:`get<.lagSolver.lagSolver.LagSolver.get>`
+        :meth:`get<.lagSolver.lagSolver.LagSolver.get>`
 
         """        
 

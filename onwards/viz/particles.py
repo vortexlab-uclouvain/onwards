@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 CMAP = 'tab20'
 
-class Part_plot(Viz):
+class Viz_particles(Viz):
 
     str_ls = [ {'s':8,'marker':'o','label':'wake', 'lw':0.78}, 
                {'s':10,'marker':'^','label':'flow', 'facecolors':'w', 'lw':0.78},

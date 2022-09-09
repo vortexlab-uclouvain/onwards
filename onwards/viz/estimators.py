@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from typing import List
     from ..farm import Farm
 
-class Estimator_plot(Viz):
+class Viz_estimators(Viz):
     def __init__(self, farm: Farm, states: List[str], measurements: List[str], 
                  labels: List[str], units: List[str], offset: List[float]=None, 
                  ylim: List[List[float, float]]=None, 
@@ -40,7 +40,7 @@ class Estimator_plot(Viz):
         labels : List[str]
             List containing the name/label of the fields extracted.
         units : List[str]
-            List containing the unit (eg: '[ms-1]') of the fields extracted.
+            List containing the unit (eg: ``'[ms-1]'``) of the fields extracted.
         offset : List[float], optional
             List containing the temporal offset applied to the measurments.
         ylim : List[List[float, float]], optional

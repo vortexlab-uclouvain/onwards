@@ -11,7 +11,7 @@ import numpy as np
 from .turbine   import Turbine
 from .airfoil   import Airfoil
 from .lagSolver import LagSolver 
-from .disp.viz  import Viz
+from .viz       import Viz
 from .utils     import LoggingDict, dict2txt
 
 if TYPE_CHECKING:
@@ -27,62 +27,66 @@ class Farm:
                  est_args: dict, model_args: dict, grid_args: dict = {},
                  wt_cherry_picking: List[int] = None, out_dir: str = None,
                  enable_logger: bool = True):    
-        """Inits Farm.
+        r"""Inits Farm.
 
         The Farm object interfaces together the different modules of the OnWaRDS
-        toolbox (eg: state estimation, data i/o, plotting).
+        toolbox (eg: turbine state estimation, flow modeling, data i/o, plotting).
 
-        A Farm consists of a series of :class:`Turbines<.Turbine>` (self.wts). 
-        Each wind turbine is associated to a :class:`Sensors<.Sensors>` object 
+        A Farm consists of a series of :class:`.Turbine` (``self.wts``). 
+        Each wind turbine is associated to a :class:`.Sensors` object 
         that gathers its measurements, m_wt, at a prescribed time, t. These 
         measurements are then translated into the estimated turbine state, s_wt, 
-        using its built-in :class:`Estimators<.estimators.estimator.Estimator>`.
+        using its built-in :class:`.Estimator`.
 
-        The wind turbine states, s_wt, are eventually fed to lag_solver, the 
-        :class:`Lagrangian flow model<.lagSolver.LagSolver>` (written in c and 
-        interfaced with main python code using ctypes) that uses them to estimate 
-        the flow state, s_flow.     
-
+        The wind turbine states, s_wt, are eventually fed to ``.lag_solver``, 
+        the :class:`.LagSolver` (written in c and interfaced with main 
+        python code using ctypes) that uses them to estimate the flow state, s_flow.
+        
+        .. math::
+                \mathbf{m}_{wt} 
+                        \rightarrow \mathbf{\hat{s}}_{wt} 
+                                \rightarrow \mathbf{\hat{s}}_{flow} 
+        
         Once initialized, a Farm object can be temporally iterated over using the 
-        built-in for loop.
-        Memory cleaning is automatically handled using the with statement.
+        built-in ``for`` loop. 
+        Memory cleaning is automatically handled using the ``with`` statement.
         
         Plotting is handled by ``self.viz`` and custom user plot can added using
-        :obj:`Farm.viz_add<.Farm.viz_add>`.
-        
+        :meth:`.Farm.viz_add`.
+
         Parameters
         ----------
         data_dir : str
             Path to the wind farm data.
         af_name : str
-            Name of the airfoil used.
+            Name of the airfoil used (eg: ``NREL``).
         snrs_args : dict
             Dictionary containing the parameters used for the turbines Sensors 
-            initialization (see :class:`Sensors<.Sensors>`).
+            initialization (refer to :class:`.Sensors`).
         est_args : dict
             Dictionary containing the parameters used for the turbines Estimators 
-            initialization (see :class:`Estimator<.estimators.estimator.Estimator>`).
+            initialization (refer to :class:`.Estimator`).
         model_args : dict
             Dictionary containing the parameters used for the Lagrangian flow 
-            model's initialization (see :class:`LagSolver<.lagSolver.lagSolver.LagSolver>`).
+            model's initialization (refer to :class:`.LagSolver`).
         grid_args : dict, optional
-            Dictionary containing the parameters used for the grid's initialization 
-            (see :class:`Grid<.lagSolver.grid.Grid>`).
+            Dictionary containing the parameters used for the Grid's initialization 
+            (refer to :class:`.Grid`).
         wt_cherry_picking : List[int], optional
-            List where each element corresponds to a wind turbine index: allows
-            to pick only the desired wind turbine. If None, all wind turbines are 
+            Each element corresponds to a wind turbine index (allows
+            to pick only the desired wind turbine), if None, all turbines are 
             modeled, by default None.
         out_dir : str, optional
-            Export directory name where figures and data are saved. 
-            If '': all exports are disabled, if None: default export directory 
-            name (onwards_run_id), by default None.
+            Export directory name where figures and data are saved. If ``''``,
+            all exports are disabled; if None (by default), default export 
+            directory name ``onwards_run_id``.
         enable_logger : bool, optional
-            If true, logs are saved to the export directory, by default True.
+            If True (by default), logs are saved to the export directory.
 
         Raises
         ------
         TypeError
-            if wt_cherry_picking is not a list of turbines indices.
+            If ``wt_cherry_picking`` is not a list of valid turbines indices.
 
         Example
         -------
@@ -95,7 +99,7 @@ class Farm:
             >>>        print(f'Current time is {t}.')
             >>>    f.plot()
         """
-
+        
         self.data_dir = data_dir
         self.__init_exports__(data_dir, out_dir, enable_logger)
 
@@ -150,10 +154,10 @@ class Farm:
         ----------
         snrs_args : dict
             Dictionary containing the parameters used for the turbines Sensors 
-            initialization (see :class:`Sensors<.Sensors>`).
+            initialization (refer to :class:`.Sensors`).
         est_args : dict
             Dictionary containing the parameters used for the turbines Estimators 
-            initialization (see :class:`Estimator<.estimators.estimator.Estimator>`).
+            initialization (refer to :class:`.Estimator`).
         """        
         self.wts = [ Turbine(self, i_wt, snrs_args, est_args) for i_wt in range(self.n_wts) ]
         # -------------------------------------------------------------------- #
@@ -165,10 +169,10 @@ class Farm:
         ----------
         model_args : dict
             Dictionary containing the parameters used for the Lagrangian flow 
-            model's initialization (see :class:`LagSolver<.lagSolver.lagSolver.LagSolver>`).
+            model's initialization (refer to :class:`.LagSolver`).
         grid_args : dict, optional
             Dictionary containing the parameters used for the grid initialization 
-            (see :class:`Grid<.lagSolver.grid.Grid>`).
+            (refer to :class:`.Grid`).
         """        
         self.lag_solver = LagSolver(self, model_args, grid_args)
         for wt in self.wts: wt.init_LagSolver()
@@ -206,7 +210,7 @@ class Farm:
         out_dir  : str
             Export directory name where all figures and data are saved. 
         enable_logger : bool
-            If true, logs are saved to the export directory.
+            If True, logs are saved to the export directory.
         """        
         self.out_dir = f'{data_dir}/onwards_run_{self.__get_runid__()}' \
                                                  if out_dir is None else out_dir
@@ -215,7 +219,7 @@ class Farm:
             os.makedirs(self.out_dir)
 
             if enable_logger: # adding a log file handler
-                fh = logging.FileHandler(f'{self.out_dir}/.log')
+                fh = logging.FileHandler(f'{self.out_dir}/onwards.log')
                 fh.setLevel(lg.parent.level)
                 fh_formatter = logging.Formatter('%(levelname)s : %(filename)s, line %(lineno)d in %(funcName)s :  %(message)s')
                 fh.setFormatter(fh_formatter)
@@ -230,7 +234,7 @@ class Farm:
     def viz_add(self, viz_type: str, *args, **kwargs):
         """ Adds a Viz object to the farm
 
-        :class:`Viz<.disp.viz.Viz>` objects store, update  and plot the wind farm data.
+        :class:`.viz.Viz` objects store, update  and plot the wind farm data.
 
         Parameters
         ----------
@@ -244,23 +248,23 @@ class Farm:
 
         See also
         --------
-        :class:`Viz<.disp.viz.Viz>`,
-        :obj:`Farm.viz_plot<Farm.viz_plot>`
+        :class:`.viz.Viz`,
+        :meth:`Farm.viz_plot`
 
         """        
         _viz_type = viz_type.lower()
         if   _viz_type == 'part':
-            from .disp.part_plot       import Part_plot               as Viz
+            from .viz.part_plot       import Viz_particles               as Viz
         elif _viz_type == 'velfield':
-            from .disp.velField_plot   import VelField_plot           as Viz
+            from .viz.velField_plot   import VelField_plot           as Viz
         elif _viz_type == 'wakecenterline':
-            from .disp.centerline_plot import WakeCenterline          as Viz
+            from .viz.centerline_plot import Viz_centerline          as Viz
         elif _viz_type == 'wakecenterline_xloc':
-            from .disp.centerline_plot import WakeCenterlineXloc_plot as Viz
+            from .viz.centerline_plot import Viz_centerline_xloc as Viz
         elif _viz_type == 'rews':
-            from .disp.rews_plot       import REWS_plot               as Viz
+            from .viz.rews_plot       import Viz_rews               as Viz
         elif _viz_type == 'estimator':
-            from .disp.estimator_plot  import Estimator_plot          as Viz
+            from .viz.estimator_plot  import Viz_estimators          as Viz
         else:
             raise Exception(f'viz_type {viz_type} not recognized.')
 
@@ -287,9 +291,9 @@ class Farm:
         states.
 
         Wind turbines states are updated every n_substeps_Estimator
-        (see :class:`Estimator<.estimators.estimator.Estimator>`).
+        (refer to :class:`.estimators.estimator.Estimator`).
         Lagrangian flow model states are updated every n_substeps_LagSolver
-        (see :class:`LagSolver<.lagSolver.lagSolver.LagSolver>`).
+        (refer to :class:`.lagSolver.LagSolver`).
 
         If Estimator/LagSolver was updated at the current timestep, the 
         update_states_flag/update_LagSolver_flag is set to True.
@@ -335,7 +339,7 @@ class Farm:
         ----------
         model_args : dict
             Dictionary containing the parameters of the Lagrangian flow model 
-            that needs to be updated (see :class:`LagSolver<.lagSolver.lagSolver.LagSolver>`)
+            that needs to be updated (refer to :class:`.lagSolver.LagSolver`)
         ini_states : dict[str, float], optional
             {'s_wt_i': v} maps the wind turbine state, s_wt_i, to its initial 
             value, v.

@@ -39,16 +39,16 @@ class Turbine:
             Index of the wind turbine (in the `farm` object).
         snrs_args : dict
             Dictionary containing the parameters used for the turbines Sensors 
-            initialization (see :class:`Sensors<.Sensors>`).
+            initialization (refer to :class:`.Sensors`).
         est_args : dict
             Dictionary containing the parameters used for the turbines Estimators 
-            initialization (see :class:`Estimator<.estimators.estimator.Estimator>`).
+            initialization (refer to :class:`Estimator<.estimators.estimator.Estimator>`).
         
         See also
         --------
-        :obj:`__init_sensors__<.turbine.Turbine.__init_sensors__>`,
-        :obj:`__init_states__<.turbine.Turbine.__init_states__>`,
-        :obj:`init_LagSolver<.turbine.Turbine.init_LagSolver>`
+        :meth:`<.Turbine.__init_sensors__>`,
+        :meth:`<.Turbine.__init_states__>`,
+        :meth:`<.Turbine.init_LagSolver>`
         """
         lg.info(f'Initializing WT {i_wt+1}/{farm.n_wts}')
         self.farm     = farm
@@ -92,7 +92,7 @@ class Turbine:
     def __init_sensors__(self, snrs_args: dict):
         """ Inits the Turbine's Sensors
 
-        :class:`Sensors<.Sensors>` provide easy interfacing between OnWaRDS 
+        :class:`.Sensors` provide easy interfacing between OnWaRDS 
         and the data source allow to access some measurement, m_wt, at the current 
         time, t, ``using the get_buffer_data('m_wt')`` method.
 
@@ -100,7 +100,7 @@ class Turbine:
         ----------
         snrs_args : dict
             Dictionary containing the parameters used for the turbines Sensors 
-            initialization (see :class:`Sensors<.Sensors>`).
+            initialization (refer to :class:`.Sensors`).
 
         Returns
         -------
@@ -115,13 +115,13 @@ class Turbine:
         ----
         Custom Sensors can be defined by the user following the example provided 
         hereunder for MySensors::
-            if snrs_type=='MySensors':
-               from sensors import MySensors
-               self.snrs = MySensors()
+        >>> if snrs_type=='MySensors':
+        >>>    from sensors import MySensors
+        >>>    self.snrs = MySensors()
 
         See also
         --------
-        :class:`Sensors<.Sensors>`
+        :class:`.Sensors`
         """
 
         if   snrs_args['type']=='SensorsPy':
@@ -176,7 +176,7 @@ class Turbine:
             :export:            *(str, optional)* - 
                 Export flag, by default False. If set to a string, the wind 
                 turbine's estimated state, s_wt, is exported to the export_dir
-                subdirectory (see :class:`SensorsPreprocessed<.sensors.SensorsPreprocessed>`).
+                subdirectory (refer to :class:`SensorsPreprocessed<.sensors.SensorsPreprocessed>`).
             :export_overwrite:  *(bool, optional)* - 
                 overwrite data if set to True, by default False.
             :export_user_field: *(List[str], optional)* - 
@@ -201,9 +201,9 @@ class Turbine:
 
         See also
         --------
-        :class:`Estimator<.estimator.Estimator>`, 
-        :class:`SensorsPreprocessed<.sensors.SensorsPreprocessed>`, 
-        :class:`StateExportBuffer<.estimators.state_export.StateExportBuffer>`
+        :class:`.estimator.Estimator`, 
+        :class:`.sensors.SensorsPreprocessed`, 
+        :class:`.estimators.stateExport.StateExportBuffer`
         """
         avail_states    = []
         self.estimators = []

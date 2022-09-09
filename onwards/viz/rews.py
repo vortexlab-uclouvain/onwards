@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from ..farm           import Farm
     from ..turbine        import Turbine
 
-class REWS_plot(Viz):
+class Viz_rews(Viz):
     farm: Farm
 
     def __init__(self, farm: Farm, t_ref: List(float), u_ref: List(float),
@@ -126,17 +126,17 @@ class REWS_plot(Viz):
         # -------------------------------------------------------------------- #
 
     def plot(self):
-        # Gather all REWS_plot objects
+        # Gather all Viz_rews objects
         if  self._was_plot: return
         
-        viz_rews_all = [v for v in self.farm.viz if isinstance(v, REWS_plot)]
+        viz_rews_all = [v for v in self.farm.viz if isinstance(v, Viz_rews)]
         for v in viz_rews_all:
             v.data_clean()
 
         normx = lambda _x: (_x)/(self.farm.af.D/self.u_norm)
         normy = lambda _y: (_y)/(self.u_norm)
 
-        # Gather and sort REWS_plot linked to a WT
+        # Gather and sort Viz_rews linked to a WT
         viz_rews_wt = [[] for _ in range(self.farm.n_wts)]
         for v in list(viz_rews_all):
             for i_wt, wt in enumerate(self.farm.wts):
@@ -147,7 +147,7 @@ class REWS_plot(Viz):
         for i in range(self.farm.n_wts):
             viz_rews_wt[i].sort()   
         
-        # Plotting REWS_plot linked to a WT
+        # Plotting Viz_rews linked to a WT
         for i_wt, v_wt in enumerate(viz_rews_wt):
             i_wt_bf = self.farm.wts[i_wt].i_bf
             _, axs = plt.subplots(len(v_wt), 1, sharex=True, figsize=(8,8), squeeze=False)
@@ -210,7 +210,7 @@ class REWS_plot(Viz):
             raise NotImplementedError('plot not implement if no parent turbine selected.')
 
         for v in self.farm.viz:
-            if isinstance(v, REWS_plot): v._was_plot = True
+            if isinstance(v, Viz_rews): v._was_plot = True
         # -------------------------------------------------------------------- #
 
     def _data_get(self, field: str, source:str=None, t_interp:List[float]=None):

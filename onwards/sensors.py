@@ -24,7 +24,7 @@ class Sensors():
 
         See also
         --------
-        :obj:`Turbines.__init_sensors__<.turbine.Turbine.__init_sensors__>`
+        :meth:`Turbines.__init_sensors__<.turbine.Turbine.__init_sensors__>`
         """
         self.fs = fs
         raise NotImplementedError
@@ -86,10 +86,10 @@ class SensorsPy(Sensors):
                         time_bnds:list=None, zero_origin:bool=False, **kwargs):
         """ Inits a SensorPy object that extract data from LES output files.
 
-        This classe allows to read data from the wind turbine data extracted from
-        the high fidelity Large Eddy Simulation solver BigFlow (developped at UCLouvain).
+        This class allows to read data from the wind turbine data extracted from
+        the high fidelity Large Eddy Simulation solver BigFlow (developed at UCLouvain).
         This solver models turbine as actuator disks and obtains the blades loads 
-        by reprojecting the disk loads over fictive blades. 
+        by projecting the disk loads over fictive blades. 
 
         The wind turbine feeds its measurement to the OnWaRDS frameworks which 
         allows to compare its output to the reference LES data.

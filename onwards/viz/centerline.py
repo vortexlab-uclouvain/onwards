@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 I_MASK = 0
 
-class WakeCenterline(Viz):
+class Viz_centerline(Viz):
     def __init__(self, farm: Farm, bf_dir: str, wm_str_id: str, i_mask: int=None):
         """ Extracts the position of the wake centerline from the Lagrangian flow 
         model and from the LES reference data.
@@ -54,13 +54,13 @@ class WakeCenterline(Viz):
 
         See also
         --------
-        :class:`disp.WakeCenterlineXloc_plot<.disp.centerline_plot.WakeCenterlineXloc_plot>`
+        :class:`viz.Viz_centerline_xloc<.viz.centerline_plot.Viz_centerline_xloc>`
         """        
         super().__init__(farm)
 
-        # check for previous WakeCenterline initialization
+        # check for previous Viz_centerline initialization
         
-        data = next((v for v in self.farm.viz if isinstance(v, WakeCenterline)), None)
+        data = next((v for v in self.farm.viz if isinstance(v, Viz_centerline)), None)
 
         if data: # data was already imported
             self.data['x']       = data.x
@@ -190,7 +190,7 @@ class WakeCenterline(Viz):
                 return self._interp[source][i_wt][i_mask](t_interp, x_interp).T
         # -------------------------------------------------------------------- #
 
-class WakeCenterlineXloc_plot(WakeCenterline):
+class Viz_centerline_xloc(Viz_centerline):
     def __init__(self, farm: Farm, bf_dir:str , wm_str_id:str, x_loc:List[float], 
                  i_mask:int=None, xlim:List[float]=None, ylim:List[float]=None, 
                  u_norm:float=None, diag:bool=True):
@@ -225,7 +225,7 @@ class WakeCenterlineXloc_plot(WakeCenterline):
 
         See also
         --------
-        :class:`disp.WakeCenterline<.disp.centerline_plot.WakeCenterline>`
+        :class:`viz.Viz_centerline<.viz.centerline_plot.Viz_centerline>`
         """      
         super().__init__(farm, bf_dir, wm_str_id, i_mask)
         self.x_loc  = x_loc

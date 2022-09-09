@@ -18,7 +18,7 @@ PLANE_ID = 'plane00'
 PLOTZERO = True
 SAVE_DIR = 'velField_slices'
 
-class VelField_plot(Viz):
+class Viz_velfield(Viz):
     farm: Farm
     grid: Grid
 
@@ -26,7 +26,6 @@ class VelField_plot(Viz):
                  mp4_export:bool=True, skip:int=1, t_start:float=False, 
                  skeleton: bool=False, slice_export: bool=True,
                  enable_anim: bool=True, du_export: bool=False,):
-        
         
         super().__init__(farm)
         self.vel_bnds     = vel_bnds
