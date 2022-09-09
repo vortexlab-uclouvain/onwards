@@ -38,7 +38,7 @@ class Farm:
         measurements are then translated into the estimated turbine state, s_wt, 
         using its built-in :class:`.Estimator`.
 
-        The wind turbine states, s_wt, are eventually fed to ``.lag_solver``, 
+        The wind turbine states, s_wt, are eventually fed to ``self.lag_solver``, 
         the :class:`.LagSolver` (written in c and interfaced with main 
         python code using ctypes) that uses them to estimate the flow state, s_flow.
         

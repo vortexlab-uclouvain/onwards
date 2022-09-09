@@ -1,4 +1,7 @@
-lagSolver
+LagSolver
+=========
+
+LagSolver
 ---------
 
 .. automodule:: onwards.lagSolver.lagSolver
@@ -7,7 +10,7 @@ lagSolver
    :show-inheritance:
    :exclude-members: farm, grid, fms, wms
 
-grid
+Grid
 ----
 
 .. automodule:: onwards.lagSolver.grid
