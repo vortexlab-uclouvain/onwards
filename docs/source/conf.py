@@ -15,8 +15,7 @@ release = '0.1'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 import sys, os
-sys.path.append(os.environ['REPO_PATH'])
-print(sys.path, '------',os.getcwd())
+sys.path.append(os.environ['ONWARDS_PATH'])
 
 extensions = [
     'sphinx.ext.autodoc',       # Core library for html generation from docstrings
