@@ -30,7 +30,8 @@ class Farm:
         r"""Inits Farm.
 
         The Farm object interfaces together the different modules of the OnWaRDS
-        toolbox (eg: turbine state estimation, flow modeling, data i/o, plotting).
+        toolbox (eg: turbine state estimation, flow modeling, data i/o, plotting)
+        [1]_ [2]_ [3]_.
 
         A Farm consists of a series of :class:`.Turbine` (``self.wts``). 
         Each wind turbine is associated to a :class:`.Sensors` object 
@@ -74,8 +75,8 @@ class Farm:
             (refer to :class:`.Grid`).
         wt_cherry_picking : List[int], optional
             Each element corresponds to a wind turbine index (allows
-            to pick only the desired wind turbine), if None, all turbines are 
-            modeled, by default None.
+            to pick only the desired turbines), if None (by default), all turbines 
+            are modeled..
         out_dir : str, optional
             Export directory name where figures and data are saved. If ``''``,
             all exports are disabled; if None (by default), default export 
@@ -98,6 +99,13 @@ class Farm:
             >>>    for t in f:
             >>>        print(f'Current time is {t}.')
             >>>    f.plot()
+
+        References
+        ----------
+        .. [1] M. Lejeune, M. Moens, and P. Chatelain. A meandering-capturing wake model coupled to rotor-based flow-sensing for operational wind farm flow prediction. Frontiers in Energy Research, 10, jul 2022.
+        .. [2] M. Lejeune, M. Moens, and P. Chatelain. Extension and validation of an operational dynamic wake model to yawed configurations. Journal of Physics: Conference Series, 2265(2):022018, may 2022.
+        .. [3] M. Lejeune, M. Moens, M. Coquelet, N. Coudou, and P. Chatelain. Data assimilation for the prediction of wake trajectories within wind farms. Journal of Physics: Conference Series, 1618:062055, sep 2020.
+    
         """
         
         self.data_dir = data_dir
@@ -232,9 +240,7 @@ class Farm:
         # -------------------------------------------------------------------- #
 
     def viz_add(self, viz_type: str, *args, **kwargs):
-        """ Adds a Viz object to the farm
-
-        :class:`.viz.Viz` objects store, update  and plot the wind farm data.
+        """ Adds a :class:`Viz` object to the farm
 
         Parameters
         ----------
@@ -244,11 +250,11 @@ class Farm:
         Raises
         ------
         Exception
-            if viz_type is not recognized.
+            If viz_type is not recognized.
 
         See also
         --------
-        :class:`.viz.Viz`,
+        :class:`.Viz`,
         :meth:`Farm.viz_plot`
 
         """        
@@ -273,35 +279,31 @@ class Farm:
 
     def __viz_update__(self):
         """
-        Updates the Viz objects
+        Updates the :class:`.Viz` objects
         """        
         for viz in self.viz: viz.update()
         # -------------------------------------------------------------------- #
 
     def viz_plot(self):
         """
-        Iteratively calls the plot methods of the Viz objects added to the farm.
+        Iteratively calls the plot methods of the :class:`.Viz` objects added to 
+        the Farm.
         """
         for viz in self.viz: viz.plot()
 
     def iterate(self):
-        """ Updates the wind farm
+        """ Updates the Farm
 
-        Successively updates the sensor states, wind turbine states and flow model
-        states.
+        Successively updates the sensor states, m_wt, wind turbine states, s_wt,
+        and flow model states, s_flow.
 
-        Wind turbines states are updated every n_substeps_Estimator
-        (refer to :class:`.estimators.estimator.Estimator`).
-        Lagrangian flow model states are updated every n_substeps_LagSolver
-        (refer to :class:`.lagSolver.LagSolver`).
-
-        If Estimator/LagSolver was updated at the current timestep, the 
-        update_states_flag/update_LagSolver_flag is set to True.
+        If an Estimator/LagSolver was performed as part of the current timestep, 
+        the corresponding update_states_flag/update_LagSolver_flag is set to True.
 
         Raises
         ------
         Exception
-            If the time is not consistent between the different wind turbines.
+            If the time is not consistent across the different turbines.
         """        
         self.update_states_flag    = (self.it)%self.wts[0].n_substeps_est==0
         self.update_LagSolver_flag = (self.it)%self.lag_solver.set['n_substeps']==0
@@ -339,10 +341,10 @@ class Farm:
         ----------
         model_args : dict
             Dictionary containing the parameters of the Lagrangian flow model 
-            that needs to be updated (refer to :class:`.lagSolver.LagSolver`)
+            that needs to be updated (refer to :class:`.LagSolver`)
         ini_states : dict[str, float], optional
-            {'s_wt_i': v} maps the wind turbine state, s_wt_i, to its initial 
-            value, v.
+            ``{'s_wt': v}`` maps the wind turbine state, ``s_wt``, to its initial 
+            value, ``v``.
         """        
         model_args   = LoggingDict(model_args)
 

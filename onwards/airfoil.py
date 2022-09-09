@@ -18,12 +18,13 @@ class Airfoil:
         Parameters
         ----------
         blade_name : str
-            name of the blade profile defined in `DATA` (eg: ``NREL``)  
+            name of the blade profile (eg: ``NREL``)  
 
         Note
         ----
         This is the minimal configuration of the Airfoil class (hence: 
-        ``minimal_config=True``).
+        ``minimal_config=True``) which facilitates the coupling with the full
+        Airfoil library. 
         """
         self.minimal_config = True
 

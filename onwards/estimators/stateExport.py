@@ -12,12 +12,11 @@ if TYPE_CHECKING:
     from ..turbine import Turbine
 
 class StateExportBuffer():
-    def __init__(self, wt: Turbine, export: str, export_overwrite:bool=False, states_user:List[str]=[]):
-        """ Saves the wind turbine estimated states for future simulations. 
+    def __init__(self, wt: Turbine, export_args: dict):
+        """ Saves the wind turbine estimated states fo future simulations. 
 
-        Along with the :class:`SensorsPreprocessed<.sensors.SensorsPreprocessed>` 
-        class, it allows to read data from preprocessed estimated 
-        turbine states in which case m_wt = s_wt.
+        Along with the :class:`.SensorsPreprocessed` class, it allows direct 
+        feed through of the sensors measurements to the ``Farm.lag_solver``.
 
         This allows for fast computations when evaluating the performances 
         of the Lagrangian (ie: skips the turbine states estimation step).
@@ -26,29 +25,37 @@ class StateExportBuffer():
         ----------
         wt : Turbine
             Parent Turbine object.
-        export : str
-            Export flag, by default False. If set to a string, the wind 
-            turbine's estimated stat
-        export_overwrite : bool, optional
-            Overwrite data if set to True, by default False.
-        states_user : List[str], optional
-            List of the measurements, not part of the wind turbine state, s_wt, 
-            that should be appended to the exported state vector.
-
+        export_args: dict
+            Dictionary containing the Estimators's export parameters.
+            
+            Available options:
+            
+            :name:         *(str)*                  - 
+                Name of the subdirectory (this subdirectory is created inside
+                ``Farm.data_dir``).
+            :overwrite:    *(bool, optional)*       - 
+                Overwrite export data if set to True, by default False.
+            :user_field:   *(List[str], optional)*  - 
+                List of the measurements, m_wt, not part of the turbine state, 
+                s_wt, that should be appended to the exported state vector. By
+                default, empty list.
+                
         Raises
         ------
+        ValueError
+            If no subdirectory ``name`` is provided.
         OSError
             If the export directory already exist.
         ValueError
-            If a conflict is detected between states_user and Turbine.states
+            If a conflict is detected between ``user_field`` and ``Turbine.states``.
 
         Example
         -------
         Once an Estimator has been exported exported:
             >>> est_args =  { 
-            >>>     'export'     : 'my_dir',
-            >>>     'export_overwrite' : True,
-            >>>     'export_user_field': ['myField']
+            >>>     'export' = { 'name' : 'my_dir',
+            >>>                  'overwrite' : True,
+            >>>                  'export_user_field': ['myField']
             >>>     ...
             >>>     }
 
@@ -65,10 +72,13 @@ class StateExportBuffer():
             >>>     }
         """
 
-        self.export_dir = f'{wt.farm.data_dir}/{export}/'
+        if 'name' not in export_args:
+            raise ValueError('No output directory specified.')
+
+        self.export_dir = f'{wt.farm.data_dir}/{export_args["name"]}/'
         if wt.i==0:
             if os.path.exists(self.export_dir):
-                if not export_overwrite:
+                if not export_args.get('overwrite', False):
                     raise OSError(f'Directory {self.export_dir} already exist. '
                                 + f'Operation terminated to avoid data loss.')
             else:
@@ -82,7 +92,7 @@ class StateExportBuffer():
         self.states      = wt.states
         self.states_user = []
 
-        for s in states_user: 
+        for s in export_args.get('user_field', []): 
             if s in self.states:
                 raise ValueError('Conflicting export field ({s}) in states_user.')
             if s in wt.snrs:

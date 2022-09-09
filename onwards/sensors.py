@@ -19,12 +19,12 @@ class Sensors():
         data_path: str
             Path to the data file.
         fs: float, optional
-            Sampling frequency in [Hz]. If None, the original time sampling
-            is preserved, by default None.
+            Sampling frequency in [Hz]. If None (by default), the original time 
+            sampling is preserved.
 
         See also
         --------
-        :meth:`Turbines.__init_sensors__<.turbine.Turbine.__init_sensors__>`
+        :meth:`Turbine.__init_sensors__`
         """
         self.fs = fs
         raise NotImplementedError
@@ -50,26 +50,26 @@ class Sensors():
         # -------------------------------------------------------------------- #
     
     def get_buffer_data(self, fld: str, i_b:int=None) -> float:
-        """ Retrieves the current value of the measurement, fld.
+        """ Retrieves the current value of the measurement ``fld``.
 
         Parameters
         ----------
         fld : str
-            Name of the field/measurement.
+            Name of the measurement.
         i_b : int, optional
             Blade index, by default None.
 
         Returns
         -------
         float
-            The current value of field `m (for blade `i_b`).s
+            The current value of measurement ``fld`` (for blade ``i_b``).
         """
         raise NotImplementedError
         # -------------------------------------------------------------------- #
 
     def __contains__(self, fld: str):
         """
-        Check if the field/measurement is available.
+        Check if the measurement, ``fld``, is available.
         """        
         raise NotImplementedError
         # -------------------------------------------------------------------- #
@@ -82,32 +82,33 @@ class Sensors():
         # -------------------------------------------------------------------- #
 
 class SensorsPy(Sensors):
-    def __init__(self, data_path:str, fs:float=None, field_names:List[float]=None, 
-                        time_bnds:list=None, zero_origin:bool=False, **kwargs):
-        """ Inits a SensorPy object that extract data from LES output files.
+    def __init__(self, data_path: str, fs: float = None, field_names: List[float] = None,
+                 time_bnds: list[float] = None, zero_origin: bool = False, **kwargs):
+        """ Inits a SensorPy object that extract data from AD output files.
 
-        This class allows to read data from the wind turbine data extracted from
-        the high fidelity Large Eddy Simulation solver BigFlow (developed at UCLouvain).
-        This solver models turbine as actuator disks and obtains the blades loads 
-        by projecting the disk loads over fictive blades. 
+        This class allows to read data extracted by the Actuator Disks used within
+        the high fidelity Large Eddy Simulation solver (developed at UCLouvain [1]_).
+        The Actuator Disk provides a full description of the wind turbine operating 
+        settings (rotation speed, pitch angle, etc.) and loads. The later are 
+        obtained by projecting the disk loads over fictive blades. 
 
-        The wind turbine feeds its measurement to the OnWaRDS frameworks which 
-        allows to compare its output to the reference LES data.
-        
+        The SensorsPy object serves as an interface between the High Fidelity 
+        numerical environment and the OnWaRDS framework. 
+
         Parameters
         ----------
         data_path : str
-            Path to the BigFlow data file.
+            Path to the data directory path.
         fs : float, optional
-            Sampling frequency in [Hz]. If None, the original time sampling.s
-            is preserved, by default None.
+            Sampling frequency in [Hz]. If None (by default), the original time 
+            sampling is preserved.
         field_names : list, optional
-            Name of the fields that should be extracted from the LES data.
-        time_bnds : list, optional
-            Data range to be extracted: time_bnds[0] is the simulation start time 
-            and time_bnds[-1] is the end time, by default None.
+            Name of the measurements to be extracted from the Actuator Disk data.
+        time_bnds : list[float], optional
+            Data range to be extracted: ``time_bnds[0]`` is the simulation start time 
+            and ``time_bnds[-1]`` is the end time, by default None.
         zero_origin : bool, optional
-            If set to true, the time vector will me updated to that the initial
+            If set to True, the time vector will be updated so that the initial
             time is set to 0, by default False.
 
         Raises
@@ -118,6 +119,10 @@ class SensorsPy(Sensors):
             If the sensors time bounds selected fall outside the available range.
         Exception
             If reference LES data could not be cast to the correct format.
+
+        References
+        ----------
+            .. [1]  M. Moens, M. Duponcheel, G. Winckelmans, and P. Chatelain. An actuator disk method with tip-loss correction based on local effective upstream velocities. Wind Energy, 21(9):766–782, 2018.
         """        
         lg.info('Initializing the sensors')
 
@@ -237,30 +242,28 @@ class SensorsPy(Sensors):
 
 class SensorsPreprocessed(SensorsPy):
     def __init__(self, i_bf: int, farm_data_dir: str, export: str, **kwargs):
-        """ Sensor class that allows to read data from preprocessed estimated 
-        turbine states in which case m_wt = s_wt
+        """ Imports the wind turbine estimated states from past simulations. 
 
-        This class allows for fast computations when evaluating the performances 
+        Along with the :class:`.StateExport` class, it allows direct 
+        feed through of the sensors measurements to the ``Farm.lag_solver``.
+
+        This allows for fast computations when evaluating the performances 
         of the Lagrangian (ie: skips the turbine states estimation step).
-
-        The user can generate its own preprocessed turbine files by setting 
-        est_args['export'] to the desired output location.
-
+        
         Parameters
         ----------
         i_bf : int
             Index of the wind turbine
         farm_data_dir : str
-            Path to the BigFlow data file.
+            Path to the data directory path.
         export : str
             Name of the subdirectory where the preprocessed sensor file where 
-            saved (ie: est_args['export'])
+            saved (ie: export_args['name'])
 
         See also
         --------
-        :class:`Estimator<.estimator.Estimator>`, 
-        :class:`SensorsPreprocessed<.sensors.SensorsPreprocessed>`
-        
+        :class:`.Estimator`, 
+        :class:`.StateExportBuffer`
         """                                               
 
         lg.info('Initializing the sensors')
