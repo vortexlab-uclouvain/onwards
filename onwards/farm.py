@@ -253,17 +253,17 @@ class Farm:
 
         """        
         _viz_type = viz_type.lower()
-        if   _viz_type == 'part':
+        if   _viz_type == 'particles':
             from .vizs.particles  import Viz_particles       as Viz
         elif _viz_type == 'velfield':
-            from .vizs.velfield   import VelField_plot       as Viz
-        elif _viz_type == 'wakecenterline':
+            from .vizs.velfield   import Viz_velfield        as Viz
+        elif _viz_type == 'centerline':
             from .vizs.centerline import Viz_centerline      as Viz
-        elif _viz_type == 'wakecenterline_xloc':
+        elif _viz_type == 'centerline_xloc':
             from .vizs.centerline import Viz_centerline_xloc as Viz
         elif _viz_type == 'rews':
             from .vizs.rews       import Viz_rews            as Viz
-        elif _viz_type == 'estimator':
+        elif _viz_type == 'estimators':
             from .vizs.estimators import Viz_estimators      as Viz
         else:
             raise Exception(f'viz_type {viz_type} not recognized.')

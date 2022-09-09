@@ -217,17 +217,17 @@ class Turbine:
             lg.debug(f'Initializing {key} of type {e_type}.')
 
             if   e_type == 'fld_fromdata':  
-                from estimators.fld_fromdata  import Est_fld_fromdata  as Estimator
+                from .estimators.fld_fromdata  import Est_fld_fromdata  as Estimator
             elif e_type == 'uinc:ti_kfbem': 
-                from estimators.uincti_kfbem  import Est_uincti_kfbem  as Estimator
+                from .estimators.uincti_kfbem  import Est_uincti_kfbem  as Estimator
             elif e_type == 'winc_nn':       
-                from estimators.winc_nn       import Est_winc_nn       as Estimator
+                from .estimators.winc_nn       import Est_winc_nn       as Estimator
             elif e_type == 'ct_fromthrust': 
-                from estimators.ct_fromthrust import Est_ct_fromthrust as Estimator
+                from .estimators.ct_fromthrust import Est_ct_fromthrust as Estimator
             elif e_type == 'ufs:wfs_waked': 
-                from estimators.ufswfs_waked  import Est_ufswfs_waked  as Estimator
+                from .estimators.ufswfs_waked  import Est_ufswfs_waked  as Estimator
             elif e_type == 'fld_debug': 
-                from estimators.fld_debug     import Est_fld_debug     as Estimator
+                from .estimators.fld_debug     import Est_fld_debug     as Estimator
             else:
                 raise ValueError(f'Estimator type `{e_type}` not recognized.')
             
