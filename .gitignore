@@ -14,7 +14,7 @@ __pycache__
 .runid
 
 # doc
-doc/build
+docs/build
 
 # local folder
 local/*
