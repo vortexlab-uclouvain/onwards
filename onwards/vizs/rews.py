@@ -22,43 +22,46 @@ class Viz_rews(Viz):
                  x_interp: float, fs_flag: bool = False, wt: Turbine = None,
                  xlim: List[float] = None, ylim: List[float] = None,
                  u_norm: float = None, diag: bool = True):
-        """ Extracts the Rotor Effective Wind Speed (REWS) at the x_interp 
+        """ Extracts the Rotor Effective Wind Speed (REWS) at the ``x_interp`` 
         streamwise location and compares it to the LES reference data.
 
         Parameters
         ----------
         farm : Farm
-            Parent Farm Object
+            Parent :class:`.Farm` Object
         t_ref : List
             Time vector of the reference LES data in [s]
         u_ref : List
-            Time series of the reference REWS velocity from computed from the 
-            LES data in [ms-1]        
-        x_interp : List[float]
-            Downstream streamwise (x) positions, the REWS should be evaluated at. 
+            Time series of the reference REWS velocity extracted from the LES 
+            data in [ms-1]        
+        x_interp : float
+            Downstream streamwise (x) position where the REWS should be evaluated. 
         fs_flag : bool, optional
             True if the ambient (ie: no wake) REWS should also be computed, by 
             default False
         wt : Turbine, optional
-            Index of the reference turbine, if a turbine is provided, the 
-            position the REWS is evaluated at will be wt+x_interp, by default 
-            None.        
+            Index of the reference turbine: if a turbine is provided, the 
+            position the REWS is evaluated at will be ``wt.x + x_interp``, 
+            by default Done.        
         xlim : List[float], optional
             User defined time bounds for plotting, by default None.
         ylim : List[float], optional
             User defined REWS bounds for plotting, by default None.
         u_norm : float, optional
-            Velocity used for data normalization with u_C=u_norm and T_C = D/u_norm, 
-            if no u_norm is provided, no normalization is applied, by default None.
+            Velocity used for data normalization T_C = D/u_norm, if no u_norm 
+            (by default) is provided, no normalization is applied.
         diag : bool, optional
-            If True, the correlation, error and MAPE are evaluated, by default True.
-
+            If True (by default), the correlation, error and MAPE are evaluated.
+        
+        See also
+        --------
+        :meth:`.LagSolver.rews_compute`
         """
 
         super().__init__(farm)
 
         # Data initialisation
-        self.data['t_mod']     = np.ones( len( farm ) ) * np.nan
+        self.data['t_mod'] = np.ones( len( farm ) ) * np.nan
         self.data['u_mod'] = np.ones( len( farm ) ) * np.nan
 
         self.fs_flag=fs_flag

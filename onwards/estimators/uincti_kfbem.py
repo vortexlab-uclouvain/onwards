@@ -71,13 +71,11 @@ class Est_uincti_kfbem(Estimator):
             :w_sec:          *(str, optional)*       - 
                 Time filtering constant [s] used for the computation of the time 
                 averaged flow statistics.
-            :bem_args:       *(dict)*       - 
+            :bem_args:       *(dict)*                - 
                 Description of the BEM solver used.
 
         Raises
         ------
-        Exception
-            _description_
         ValueError
             If the BEM solver arguments are not consistent.
 

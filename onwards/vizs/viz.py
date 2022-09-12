@@ -15,7 +15,7 @@ class Viz():
         """ Inits a Viz object
 
         Prototype class for user defined Viz objects. 
-        Viz objects facilitate the export and plot of the OnWaRDS simulation 
+        Viz objects facilitate the export and plot of the OnWaRDS simulations 
         results.
 
         Parameters
@@ -30,13 +30,6 @@ class Viz():
         self._was_clean    = False 
         # -------------------------------------------------------------------- #
 
-    def update(self):
-        """
-        Updates the Viz data
-        """        
-        pass
-        # -------------------------------------------------------------------- #
-
     def reset(self):
         """
         Resets the Viz data
@@ -44,8 +37,15 @@ class Viz():
         self._was_exported = False
         # -------------------------------------------------------------------- #
 
+    def update(self):
+        """
+        Updates the Viz data
+        """        
+        pass
+        # -------------------------------------------------------------------- #
+
     def savefig(self, fid:str, *args, **kwargs):
-        """ Save the current figure 
+        """ Saves the current figure 
 
         Parameters
         ----------
@@ -56,16 +56,9 @@ class Viz():
             plt.savefig(f'{self.farm.out_dir}/{fid}', *args, **kwargs)
         # -------------------------------------------------------------------- #
 
-    def _data_clean(self):
-        """ 
-        Clean the Viz data
-        """        
-        pass
-        # -------------------------------------------------------------------- #
-
     def data_clean(self):
         """ 
-        Wrapper for _data_clean
+        Cleans the Viz data (wrapper for ``_data_clean``)
         """        
         pass
         if not self._was_clean:
@@ -73,48 +66,62 @@ class Viz():
             return self._data_clean()
         # -------------------------------------------------------------------- #
 
-    def _export(self):
+    def data_get(self, *args, **kwargs):
         """ 
-        Exports the Viz data
-        """        
-        pass
+        Wrapper for ``_data_get``
+        """       
+        self.data_clean()
+        return self._data_get(*args, **kwargs)
         # -------------------------------------------------------------------- #
 
     def export(self):
         """ 
-        Wrapper for _export
+        Exports de the Viz data (wrapper for ``_export``)
+
+        Note
+        ----
+        ``export`` is automatically triggered when calling ``farm.__exit__`` 
+        method.
         """        
         self.data_clean()
         if not self._was_exported:
             self._export()
         # -------------------------------------------------------------------- #
 
-    def _plot(self):
-        """ 
-        Plots the Viz data
-        """        
-        pass
-        # -------------------------------------------------------------------- #
-
     def plot(self):
         """ 
-        Wrapper for _plot
+        Plots the Viz data (wrapper for ``_plot``)
         """        
         self.data_clean()
         return self._plot()
         # -------------------------------------------------------------------- #
 
-    def _data_get(self, *args, **kwargs):
+    def _data_clean(self):
         """ 
-        Viz data getter
-        """   
-        raise NotImplementedError('data_get not implemented')
+        Clean the Viz data (should be implemented by the child class)
+        """        
+        raise NotImplementedError('No _data_clean method defined for Viz object.')
         # -------------------------------------------------------------------- #
 
-    def data_get(self, *args, **kwargs):
+    def _data_get(self, *args, **kwargs):
         """ 
-        Wrapper for _data_get
-        """       
-        self.data_clean()
-        return self._data_get(*args, **kwargs)
+        Viz data getter (should be implemented by the child class)
+        """   
+        raise NotImplementedError('No _data_get method defined for Viz object.')
         # -------------------------------------------------------------------- #
+
+    def _export(self):
+        """ 
+        Exports the Viz data (should be implemented by the child class)
+        """        
+        raise NotImplementedError('No _export method defined for Viz object.')
+        # -------------------------------------------------------------------- #
+
+    def _plot(self):
+        """ 
+        Plots the Viz data (should be implemented by the child class)
+        """        
+        raise NotImplementedError('No _plot method defined for Viz object.')
+        # -------------------------------------------------------------------- #
+
+

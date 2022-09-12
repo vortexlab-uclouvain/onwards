@@ -9,6 +9,8 @@ Viz (base class)
    :undoc-members:
    :show-inheritance:
    :private-members: _plot, _export, _data_clean
+   :exclude-members: farm, grid
+
 
 Viz_centerline
 --------------
@@ -17,6 +19,7 @@ Viz_centerline
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: plot, reset, update, farm, grid
 
 Viz_estimators
 --------------
@@ -25,6 +28,8 @@ Viz_estimators
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: plot, reset, update, farm, grid
+
 
 Viz_particles
 -------------
@@ -33,7 +38,8 @@ Viz_particles
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: str_ls, vel_str_id
+   :exclude-members: plot, reset, update, str_ls, vel_str_id, farm, grid
+
 
 Viz_rews
 --------
@@ -42,6 +48,8 @@ Viz_rews
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: plot, reset, update, farm, grid
+
 
 Viz_velfield
 ------------
@@ -50,3 +58,5 @@ Viz_velfield
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: plot, reset, update, farm, grid
+

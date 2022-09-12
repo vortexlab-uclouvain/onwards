@@ -15,37 +15,110 @@ from scipy import interpolate
 from .viz import Viz
 from . import linespecs as ls
 
-from readCenterlineForWM import Centerline
 
 if TYPE_CHECKING:
     from typing import List
     from ..farm import Farm
 
+class Centerline:
+    def __init__(self, file, mask_type:str = '', time_zero_origin=True):
+        """ Centerline object
+        
+        Parameters
+        ----------
+            file : str
+                Filepath to the .bin centerline file.
+            mask_type : (str, optional)
+                Mask type (eg: ``gaussian``), by default, None.
+            time_zero_origin: (bool, optional)
+                If true, time vector is shifted so that ``self.time[0]=0``by 
+                default, False.
+        Note
+        ----
+        This class is only loaded if no local implementation is found.
+        """
+
+        self.path = file
+
+        if 'gaussian' in file and 'gaussian' not in mask_type:
+            print('WARNING: mask_type turned of while file identifier contains \'gaussian\'')
+
+        with open(file, 'r') as fid:
+            # Number of points in the 3 directions
+            nTS = np.fromfile(fid, np.int32, 1)[0]
+            nx   = np.fromfile(fid, np.int32, 1)[0]
+
+            # coordinates
+            x = np.fromfile(fid, np.float64, nx)
+
+            nGlob = 1
+            nLoc = 3 if mask_type=='gaussian' else 2
+
+            nSteps = nGlob+nLoc*nx
+            nTot   = nTS*nSteps
+
+            data = np.fromfile(fid, np.float64, nTot)
+            if data.shape < nTot:
+                nTot = data.shape
+                nTS  = int(nTot/nSteps)
+
+            rank = 0
+            time = data[range(rank,rank+(nTS-1)*nSteps+1,nSteps)]
+            if time_zero_origin: time = time-time[0]
+            rank += 1
+
+            sigma, y, z = (np.zeros((nTS,nx)) for i in range(3))
+
+            if mask_type=='gaussian':
+                for i in range(nx):
+                    sigma[0:nTS,i] = data[range(rank,rank+(nTS-1)*nSteps+1,nSteps)]
+                    rank += 1
+
+            for i in range(nx):
+                y[0:nTS,i] = data[range(rank,rank+(nTS-1)*nSteps+1,nSteps)]
+                rank += 1
+
+            for i in range(nx):
+                z[0:nTS,i] = data[range(rank,rank+(nTS-1)*nSteps+1,nSteps)]
+                rank += 1
+
+            self.time, self.x, self.y, self.z = time, x, y, z
+
+            self.nx = nx
+            self.nT = nTS
+            
+            self.x0_vec = [self.x[0], np.mean(self.y[:,0]), np.mean(self.z[:,0]) ]
+
+try:
+    from readCenterlineForWM import Centerline
+except ImportError: 
+    lg.info('ReadCenterlineForWM not available: using local implementation.')
+
 I_MASK = 0
 
 class Viz_centerline(Viz):
-    def __init__(self, farm: Farm, bf_dir: str, wm_str_id: str, i_mask: int=None):
+    def __init__(self, farm: Farm, bf_dir: str, wm_str_id: str, i_mask: int = None):
         """ Extracts the position of the wake centerline from the Lagrangian flow 
         model and from the LES reference data.
 
         Parameters
         ----------
         farm : Farm
-            Parent Farm Object
+            Parent :class:`.Farm` Object
         bf_dir : str
             Path to the reference LES data.
         wm_str_id : str
-            Template for the wake centerline filename generation (eg: WMcenterline_gaussianMask)
+            Template for the wake centerline filename generation (eg: 
+            ``WMcenterline_gaussianMask``)
         i_mask : int, optional
             Index of the mask used for the wake centerline tracking for the LES 
-            reference data, if None, all available masks are imported, by default 
-            None.
+            reference data, if None (by default), all available masks are imported.
 
         Raises
         ------
         Exception
             If any of the wake centerline origin does not match the associated 
-            turbine location.
+            Turbine location.
 
         Note
         ----
@@ -54,7 +127,7 @@ class Viz_centerline(Viz):
 
         See also
         --------
-        :class:`viz.Viz_centerline_xloc<.viz.centerline_plot.Viz_centerline_xloc>`
+        :class:`.Viz_centerline_xloc`
         """        
         super().__init__(farm)
 
@@ -163,13 +236,7 @@ class Viz_centerline(Viz):
                                                   kind='linear' )
                                           for i_mask in range(self.n_masks) ]
         # -------------------------------------------------------------------- #
-    
-    def _export(self):
-        # data should only be exported once
-        if self._it is not None: 
-            np.save(f'{self.farm.out_dir}/wcl_data.npy', self.data, allow_pickle=True)
-        # -------------------------------------------------------------------- #
-    
+        
     def _data_get(self, field: str, source:str=None, i_mask:int=0, i_wt:int=0,
                           t_interp:List[float]=None, x_interp:List[float]=None):
 
@@ -189,43 +256,50 @@ class Viz_centerline(Viz):
                                                if t_interp is None else t_interp
                 return self._interp[source][i_wt][i_mask](t_interp, x_interp).T
         # -------------------------------------------------------------------- #
+    
+    def _export(self):
+        # data should only be exported once
+        if self._it is not None: 
+            np.save(f'{self.farm.out_dir}/wcl_data.npy', self.data, allow_pickle=True)
+        # -------------------------------------------------------------------- #
+
+    def _plot_(self):
+        pass
+        # -------------------------------------------------------------------- #
 
 class Viz_centerline_xloc(Viz_centerline):
-    def __init__(self, farm: Farm, bf_dir:str , wm_str_id:str, x_loc:List[float], 
-                 i_mask:int=None, xlim:List[float]=None, ylim:List[float]=None, 
-                 u_norm:float=None, diag:bool=True):
+    def __init__(self, farm: Farm, bf_dir: str, wm_str_id: str, x_loc: List[float],
+                 i_mask: int = None, xlim: List[float] = None, ylim: List[float] = None,
+                 u_norm: float = None, diag: bool = True):
         """ Extracts the position of the wake centerline at the x_loc location and 
         compares it to the LES reference data.
 
         Parameters
         ----------
         farm : Farm
-            Parent Farm Object
+            Parent :class:`.Farm` Object
         bf_dir : str
             Path to the reference LES data.
         wm_str_id : str
-            Template for the wake centerline filename generation 
-            (eg: WMcenterline_gaussianMask)
-        x_loc : List[float]
-            List of downstream streamwise (x) positions in [m] where the wake 
-            centerline is evaluated.
+            Template for the wake centerline filename generation (eg: 
+            ``WMcenterline_gaussianMask``)
         i_mask : int, optional
             Index of the mask used for the wake centerline tracking for the LES 
-            reference data, if None, all available masks are imported, by default 
-            None.
+            reference data, if None (by default), all available masks are imported.
         xlim : List[float], optional
             User defined time bounds for plotting, by default None.
         ylim : List[float], optional
             User defined streamwise position bounds for plotting, by default None.
         u_norm : float, optional
-            Velocity used for data normalization T_C = D/u_norm, if no u_norm is 
-            provided, no normalization is applied, by default None.
+            Velocity used for data normalization T_C = D/u_norm, if no u_norm 
+            (by default) is provided, no normalization is applied.
         diag : bool, optional
-            If True, the correlation, error and MAPE are evaluated, by default True.
+            If True (by default), the correlation, error and MAPE are evaluated.
 
         See also
         --------
-        :class:`viz.Viz_centerline<.viz.centerline_plot.Viz_centerline>`
+        :class:`.Viz_centerline`
+
         """      
         super().__init__(farm, bf_dir, wm_str_id, i_mask)
         self.x_loc  = x_loc
