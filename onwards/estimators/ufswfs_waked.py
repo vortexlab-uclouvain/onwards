@@ -17,7 +17,16 @@ class Est_ufswfs_waked(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
         """
         Corrects the ambient streamwise velocity if the wind turbine is waked. 
+
+        :Input(s) states:       * Incident streamwise velocity component (``u_inc``) [ms-1] 
+                                * Incident spanwise velocity component (``w_inc``) [ms-1] 
+                                
+        :Input(s) measurements: * None
+        
+        :State(s) computed:     * Estimated ambient streamwise velocity component (``u_fs``) [ms-1] 
+                                * Estimated ambient spanwise velocity component (``w_fs``) [ms-1] 
         """
+
         meas   = []
         states = ['u_fs', 'w_fs']
         req_states = ['u_inc', 'w_inc'] 

@@ -37,8 +37,56 @@ class Est_uincti_kfbem(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
         """
         An estimator that computes u_inc and ti from the blade loads using a 
-        Kalman Filter coupled to a BEM code.
+        Kalman Filter coupled to a BEM code [1]_.
+
+        :Input(s) states:       * None
+
+        :Input(s) measurements: * Rotation (``rotSpeed``) [rpm]
+                                * Blade collective pitch (``pitchA``) [rad]
+                                * Yaw angle (``yawA``) [rad]
+                                * Blade azimuthal angle (``theta``) [rad]
+                                * Edgewise bending moments (``Me``) [NM]
+
+        :State(s) computed:     * Turbulence intensity (``TI``) [%]
+                                * Rotor Effective Wind Speed (``u_inc``) [ms-1]
+
+        The input parameters are:
+
+        Parameters
+        ----------
+        wt : Turbine
+            Parent :class:`.Turbine` object.
+        avail_states : list
+            List of the Turbine's states available.
+        est_args : dict
+            Dictionary containing the parameters used for the estimator.
+
+            Available fields:
+            
+            :n_sec:          *(int, optional)*       - 
+                Number of sector.
+            :offset_sec:     *(float, optional)*     - 
+                Azimuthal angle [rad] corresponding to the start of the first 
+                sector.
+            :w_sec:          *(str, optional)*       - 
+                Time filtering constant [s] used for the computation of the time 
+                averaged flow statistics.
+            :bem_args:       *(dict)*       - 
+                Description of the BEM solver used.
+
+        Raises
+        ------
+        Exception
+            _description_
+        ValueError
+            If the BEM solver arguments are not consistent.
+
+        References
+        ----------
+        .. [1] C. L. Bottasso, S. Cacciola, and J. Schreiber. Local wind speed estimation, with application to wake impingement detection. Renewable Energy, 116:155–168, 2018.
+        
         """
+
         meas   = ['rotSpeed', 'pitchA', 'yawA', 'theta', 'Me', 'uCx_m2D']
         states = ['u_inc', 'ti']
         req_states = [] 
@@ -49,13 +97,10 @@ class Est_uincti_kfbem(Estimator):
         self.w_sec      = est_args.setdefault('w_sec',      600.    )
 
         dt = 1./wt.fs
-        if self.w_sec < dt:
-            raise Exception('wBufferSec is too narrow (should be large than '
-                           +'the estimator update time step {:0.2f} [s]'.format(dt))
         self.n_t = int((self.w_sec)//(dt))
 
         # Wind turbine initial state
-        u0  = self.wt.snrs.get_buffer_data('uCx_m2D')
+        u0  = 8.
         ti0 = 7.
         
         self.u_ref = u0 

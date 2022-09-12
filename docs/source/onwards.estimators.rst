@@ -16,6 +16,7 @@ Est\_ct\_fromthrust
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: update
 
 Est\_fld\_debug
 ---------------
@@ -24,6 +25,7 @@ Est\_fld\_debug
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: update
 
 Est\_fld\_fromdata
 ------------------
@@ -32,6 +34,7 @@ Est\_fld\_fromdata
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: update
 
 Est\_ufswfs\_waked
 ------------------
@@ -40,6 +43,7 @@ Est\_ufswfs\_waked
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: update
 
 Est\_uincti\_kfbem
 ------------------
@@ -48,16 +52,7 @@ Est\_uincti\_kfbem
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: get_ti, get_u, get_ubar, in_bounds, iterate_ekf, update_snrs
-
-Est\_winc\_nn
--------------
-
-.. automodule:: onwards.estimators.winc_nn
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
+   :exclude-members: update, get_ti, get_u, get_ubar, in_bounds, iterate_ekf, update_snrs
 
 StateExport
 -----------

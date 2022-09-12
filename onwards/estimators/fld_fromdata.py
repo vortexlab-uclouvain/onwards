@@ -13,6 +13,18 @@ class Est_fld_fromdata(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
         """
         Extract the turbine state directly from the Sensor data.
+
+        :Input(s) states:       * None
+        
+        :Input(s) measurements: * User defined (cfr :meth:`.Est_fld_fromdata.update`)
+        
+        :State(s) computed:     * User defined (cfr :meth:`.Est_fld_fromdata.update`)
+        
+        Note
+        ----
+        This Estimator can be used to bypass the Turbine's state estimation 
+        procedure by setting both ``avail_states`` and ``est_args`` to 
+        ``MINIMAL_STATES``.
         """
         meas   = est_args['meas_in']
         states = est_args['state_out']

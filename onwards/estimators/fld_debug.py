@@ -14,6 +14,13 @@ class Est_fld_debug(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
         """
         Set the turbine state to user defined values.
+
+        :Input(s) states:       * User defined (cfr :meth:`.Est_fld_debug.update`)
+
+        :Input(s) measurements: * User defined (cfr :meth:`.Est_fld_debug.update`)
+        
+        :State(s) computed:     * User defined (cfr :meth:`.Est_fld_debug.update`)
+        
         """
         meas   = []
         from ..turbine import MINIMAL_STATES

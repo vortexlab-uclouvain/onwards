@@ -10,16 +10,26 @@ if TYPE_CHECKING:
 class Estimator():
     def __init__(self, wt: Turbine, meas: list, states: list, req_state: list,
                  avail_states: list):
-        """ Inits a Estimator object
-
+        r""" Inits a Estimator object
+        
         Prototype class for user defined Estimator objects. 
-        Estimator converts the wind turbine measurements, m_wt, to the turbine 
+        Estimator converts th Turbine's measurements, m_wt, to the Turbine's
         state, s_wt.
+
+        .. math::
+            \mathbf{m}_{wt} \rightarrow \mathbf{\hat{s}}_{wt} 
+
+        The ith state, s_wt^i, is computed from the sensors measurements possibly
+        along with previously computed states, s_wt^J, with J : j < i
+
+        .. math::
+            \mathbf{\hat{s}}_{wt}^i
+                = \mathbf{\hat{s}}_{wt}^i(\mathbf{m}_{wt}, \mathbf{\hat{s}}_{wt}^J)
 
         Parameters
         ----------
         wt : Turbine
-            Parent Turbine object.
+            Parent :class:`.Turbine` object.
         meas : list
             List of the measurements meas required by the Estimator.
         states : list
@@ -53,6 +63,9 @@ class Estimator():
     def update(self):
         """
         Computes the current value of the Estimator's state(s).
+        
+        The corresponding state(s) should be updated in the parent Turbine object:
+        ``self.wt.states['myState'] = myValue`` 
         """
         raise NotImplementedError
         # -------------------------------------------------------------------- #

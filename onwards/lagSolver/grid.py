@@ -40,7 +40,8 @@ class Grid():
             :dz:         *(float, optional)* - 
                 z grid spacing in [m], by default 20.
             :margin:     *(List[List[float]], optional)* - 
-                [[xm, xp], [ym, yp]] minimal margin of the domain around each turbine.
+                ``[[xm, xp], [ym, yp]]`` minimal margin of the domain around 
+                each Turbine.
         """
         self.farm       = lag_solver.farm
         self.lag_solver = lag_solver
@@ -121,13 +122,13 @@ class Grid():
         # -------------------------------------------------------------------- #
 
     def u_fm_compute(self, filt: str = 'flow') -> np.array:
-        """ Interpolates the ambient flow model over the grid.
+        """ Interpolates the ambient flow model over the Grid.
 
         Parameters
         ----------
         filt : str, optional
-            'flow' or 'rotor' depending on the width of the filter used for the 
-            ambient velocity field computation, by default 'flow'.
+            ``flow`` or ``rotor`` depending on the width of the filter used for the 
+            ambient velocity field computation, by default ``flow``.
 
         Returns
         -------
@@ -137,7 +138,7 @@ class Grid():
         Raises
         ------
         ValueError    
-            If filt is not valid (ie: 'rotor' or 'flow').
+            If filt is not valid (ie: ``rotor`` or ``flow``).
         """
         if filt not in ['flow', 'rotor']:
             raise ValueError('Filter type not recognized (should be `flow` or `rotor`.')
@@ -156,7 +157,7 @@ class Grid():
     
     def du_wm_compute(self, subGridFlag=False) -> np.array:
         """ 
-        Interpolates the wake flow model over the grid.
+        Interpolates the wake flow model over the Grid.
 
         Returns
         -------
@@ -172,13 +173,13 @@ class Grid():
 
     def u_compute(self, filt='flow') -> np.array:
         """ 
-        Interpolates the flow model over the grid.
+        Interpolates the flow model over the Grid.
 
         Parameters
         ----------
         filt : str, optional
-            'flow' or 'rotor' depending on the width of the filter used for the 
-            ambient velocity field computation, by default 'flow'.
+            ``flow`` or ``rotor`` depending on the width of the filter used for
+            the ambient velocity field computation, by default ``flow``.
 
         Returns
         -------

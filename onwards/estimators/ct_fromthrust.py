@@ -16,8 +16,17 @@ CT_LIM = 24/25
 class Est_ct_fromthrust(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
         """
-        Computes the thrust coefficient, ct, from the measured thrust, T, and 
-        from the estimated incident velocity, u_inc, and yaw angle, yaw. 
+        Computes the thrust coefficient, ``ct``, from the measured thrust, ``T``, 
+        and from the estimated incident velocity, ``u_inc``, and yaw angle, 
+        ``yaw``. 
+
+        :Input(s) states:       * Rotor incident velocity (``u_inc``) [ms-1]
+                                * Yaw (``yaw``) [rad]
+
+        :Input(s) measurements: * Thrust (``T``) [N]
+
+        :State(s) computed:     * Thrust coefficient (``ct``) [-]
+        
         """
         meas   = ['T']
         states = ['ct']

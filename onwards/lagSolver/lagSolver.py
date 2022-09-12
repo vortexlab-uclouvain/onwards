@@ -30,23 +30,29 @@ class LagSolver():
     wms:  List(py_comm.c_WakeModel_p)
 
     def __init__(self, farm: Farm, model_args: dict, grid_args: dict = {}):
-        """ Inits a LagSolver object.
+        r""" Inits a LagSolver object.
 
-        LagSolver object interfaces the c Lagrangian flow model using ctypes.
+        LagSolver object allows to compute the estimated flow state from the local, estimated
+        Turbine states.
+
+        .. math::
+            \mathbf{\hat{s}}_{wt} \rightarrow \mathbf{\hat{s}}_{flow} 
+
+        It interfaces the c Lagrangian flow model using ctypes.
 
         Parameters
         ----------
         farm : Farm
-            Parent farm object.
+            Parent :class:`.Farm` object.
         model_args : dict
             Dictionary containing the parameters used for the Lagrangian flow 
-            model's initialization 
+            model's initialization. 
 
             Available fields:
 
             :n_substeps: *(int  , optional)* - 
                 Number of Farm timesteps between two successive Lagrangian flow 
-                model updates, by default 100.
+                model updates, by default 1.
             :n_fm:       *(int  , optional)* - 
                 Maximum number of ambient flow particles used for each turbine, 
                 by default 100  
@@ -57,10 +63,10 @@ class LagSolver():
                 Convective ambient particles tuning constant , by default 0.73 
             :n_wm:       *(int  , optional)* - 
                 Maximum number of wake particles used for each turbine, by 
-                default 80   
+                default 80.   
             :n_shed_wm:  *(int  , optional)* - 
                 Number of Lagrangian flow model timesteps between the shedding 
-                of two successive wake particles, by default 2    
+                of two successive wake particles, by default 2.    
             :cw:         *(float, optional)* - 
                 Convective wake particles tuning constant, by default 0.54 
             :sigma_xi_f: *(float, optional)* - 
@@ -86,9 +92,14 @@ class LagSolver():
                 Wake expansion tuning constant (TI scaling), by default 0.039 
             :ceps:       *(float, optional)* -
                 Initial wake width tuning constant, by default 0.2
+
         grid_args : dict, optional
             Dictionary containing the parameters used for the Grid's initialization 
-            (refer to :class:`Grid<.lagSolver.grid.Grid>`).  
+            (refer to :class:`.Grid`).  
+
+        See also
+        --------
+            :class:`.Grid`
 
         References
         ----------
@@ -134,18 +145,19 @@ class LagSolver():
 
     def reset(self, model_args_new):
         """ Resets the flow states to the initial configuration and updates the 
-            Lagrangian flow model parameters.
+        Lagrangian flow model parameters.
 
         Parameters
         ----------
         model_args : dict
             Dictionary containing the parameters of the Lagrangian flow model 
-            that needs to be updated.
+            to be updated.
 
         Raises
         ------
         ValueError
-            If one of the following model parameters is updated: n_fm, n_wm or sd_type.
+            If one of the following model parameters is updated: ``n_fm``,``n_wm`` 
+            or ``sd_type``.
         """  
 
         self._set_c_.update(model_args_new)
@@ -158,7 +170,7 @@ class LagSolver():
         Raises
         ------
         Exception
-            If a timing mismatch is detected between the parent Farm object and 
+            If a time mismatch is detected between the parent Farm object and 
             the Lagrangian flow model.
         """
 
@@ -196,31 +208,31 @@ class LagSolver():
         Parameters
         ----------
         model : str
-            Sub-model from which data should be extracted 'W' for wake or 'F' 
+            Sub-model from which data should be extracted ``W`` for wake or ``F`` 
             for ambient flow field.
         field : str
             Name of the field to be extracted.
         comp : int, optional
-            Flow component to be extracted (0: x or 1: z), by default None.
+            Flow component to be extracted (``0``: x or ``1``: z), by default None.
         i_wt : int, optional
-            Index of the turbine data should be extracted from if None data is 
-            extracted from all turbines, by default None.
+            Index of the Turbine data should be extracted from if None (by default
+            data is extracted from all turbines.
 
         Returns
         -------
         np.array
-            Array containing the field requested  
+            Array containing the field requested.  
 
         Raises
         ------
         ValueError
-            If model is not 'W' or 'F'.
+            If model is not ``W`` or ``F``.
         ValueError
             If no field component, comp, is provided for a vector field. 
         ValueError
             If a field component, comp, is specified for a scalar field. 
         ValueError
-            If the wind turbine index request, i_wt, is not valid.
+            If the wind turbine index request, ``i_wt``, is not valid.
         """
 
         if model not in ['W', 'F']:
@@ -255,13 +267,13 @@ class LagSolver():
         # -------------------------------------------------------------------- #
 
     def get_part_iwt(self, model: str) -> np.array:
-        """ Computes the mapping between the :meth:`LagSolver.get<.lagSolver.lagSolver.LagSolver.get>`
-        outputs for i_wt=None and the turbines.
+        """ Computes the mapping between the :meth:`.LagSolver.get`
+        outputs for ``i_wt=None`` and the Turbines.
 
         Parameters
         ----------
         model : str
-            Sub-model from which data should be extracted 'W' for wake or 'F' 
+            Sub-model from which data should be extracted ``W`` for wake or ``F`` 
             for ambient flow field.
 
         Returns
@@ -272,11 +284,11 @@ class LagSolver():
         Raises
         ------       
         ValueError
-            If model is not 'W' or 'F'.
+            If model is not ``W`` or ``F``.
 
         See also
         --------
-        :meth:`get<.lagSolver.lagSolver.LagSolver.get>`
+        :meth:`get<.LagSolver.get`
 
         """        
 
@@ -312,23 +324,24 @@ class LagSolver():
         buffer : py_comm.Vec, optional
             Vec object allocating the output memory location (allows not to 
             reallocate the wind farm global grid at every time step), buffer 
-            shape should be consistent with xv and zv if None a new output 
-            vector is allocated, by default None.
+            shape should be consistent with ``xv`` and ``zv`` if None (by default)
+            a new output vector is allocated.
         i_wt_exclude : int, optional
             Ignores the selected wind turbine for the ambient velocity 
-            computations, by default -1.
+            computations, by default -1 (ie: all turbines are used).
 
         Returns
         -------
         np.array
-            Estimated ambient flow field [u, w]
+            Estimated ambient flow field ``[u, w]``
 
         Raises
         ------
         ValueError
-            If the buffer shape provided is not consistent with the shape of x, z.
+            If the buffer shape provided is not consistent with the shape of 
+            ``xv``, ``zv``.
         Exception
-            If filt is not rotor or flow.
+            If ``filt`` is not ``rotor`` or ``flow``.
         """
         x, y   = _IN2VEC(xv,zv)
         u_vec = py_comm.Vec((2,*x.x.shape)) if buffer is None else buffer
@@ -354,20 +367,19 @@ class LagSolver():
         buffer : py_comm.Vec, optional
             Vec object allocating the output memory location (allows not to 
             reallocate the wind farm global grid at every time step), buffer 
-            shape should be consistent with xv and zv if None a new output 
-            vector is allocated, by default None.
+            shape should be consistent with ``xv`` and ``zv`` if None (by default)
+            a new output vector is allocated.
 
         Returns
         -------
         np.array
-            Estimated ambient flow field [u, w]
+            Estimated ambient flow field ``[u, w]``
 
         Raises
         ------
         ValueError
-            If the buffer shape provided is not consistent with the shape of x, z.
-        Exception
-            If filt is not rotor or flow.
+            If the buffer shape provided is not consistent with the shape of 
+            ``xv``, ``zv``.
         """
         x, y   = _IN2VEC(xv,zv)
         du_vec = py_comm.Vec((2,*x.x.shape)) if buffer is None else buffer
@@ -379,20 +391,21 @@ class LagSolver():
         # -------------------------------------------------------------------- #
 
     def rews_compute(self, x_rotor:List[float], r_rotor:float) -> float:
-        """ Computes the Rotor Effective Wind Speed at x_rotor over a rotor of 
-        diameter, r_rotor and oriented along x.
+        """ Computes the Rotor Effective Wind Speed at ``x_rotor`` over a rotor of 
+        diameter, ``r_rotor and`` oriented along x.
 
         Parameters
         ----------
         x_rotor : List[float]
-            Fictive rotor center location [x,y,z] in [m].
+            Fictive rotor center location ``[x,y,z]`` in [m].
         r_rotor : float
              Fictive rotor diameter in [m].
 
         Returns
         -------
         float
-            The Rotor Effective Wind Speed of diameter r_rotor and located at x_rotor.
+            The Rotor Effective Wind Speed of diameter ``r_rotor`` and located 
+            at ``x_rotor``.
         """
         x_cast = np.array([x_rotor[0],x_rotor[1],x_rotor[2]])
         x = py_comm.Vec(x_cast)
