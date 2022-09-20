@@ -61,16 +61,12 @@ class StateExportBuffer():
 
         One may load it using:
             >>> snrs_args = {
-            >>>     'type':   'SensorsPreprocessed',
-            >>>     'export': 'my_dir'
+            >>>     'type': 'SensorsPreprocessed',
+            >>>     'name': 'my_dir'
             >>>     }  
-            >>> est_args  = {    
-            >>>     'estimator0' : {'type':'fld_fromdata',  
-            >>>                     'meas_in':MINIMAL_STATES,  
-            >>>                     'state_out':MINIMAL_STATES}
-            >>>     ...
-            >>>     }
         """
+
+        lg.info('Initializing the Turbine\'s state export.')
 
         if 'name' not in export_args:
             raise ValueError('No output directory specified.')
@@ -80,7 +76,8 @@ class StateExportBuffer():
             if os.path.exists(self.export_dir):
                 if not export_args.get('overwrite', False):
                     raise OSError(f'Directory {self.export_dir} already exist. '
-                                + f'Operation terminated to avoid data loss.')
+                                + f'Operation terminated to avoid data loss'
+                                + f'(switch overwrite to True).')
             else:
                 os.mkdir(self.export_dir)
 

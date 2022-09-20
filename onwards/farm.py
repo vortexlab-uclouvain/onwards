@@ -119,7 +119,7 @@ class Farm:
 
         # Farm geometry
         lg.info(f'Loading data from {data_dir}')
-        _x_wt_load = np.load(f'{data_dir}/geo.npy')
+        _x_wt_load = self._load_geo(data_dir)
 
         if wt_cherry_picking is None:
             self.x_wts = _x_wt_load
@@ -363,6 +363,36 @@ class Farm:
         for v in self.viz: v.reset()
         # -------------------------------------------------------------------- #
 
+    def _load_geo(self, data_dir: str) -> np.array:
+        """ Load the Farm geometry
+
+        Parameters
+        ----------
+        data_dir : str
+            Path to the wind farm data.
+
+        Returns
+        -------
+        np.array
+            A n_wt by 3 array containing the [x, y, z] coordinate of every 
+            Turbine (x: streamwise, y: vertical, z: crosswind).
+
+        Raises
+        ------
+        FileNotFoundError
+            If no valid geo file (.txt or .npy) is found.
+        """
+        if   'geo.npy' in os.listdir(data_dir):
+            out = np.load(f'{data_dir}/geo.npy')
+        elif 'geo.txt' in os.listdir(data_dir):
+            with open(f'{data_dir}/geo.txt') as fid:
+                out = np.array([[float(x) for x in l.strip().rsplit()]  
+                                                    for l in fid.readlines()])
+        else:
+            raise FileNotFoundError('No valid geo file (.txt or .npy) found.')
+
+        return out
+
     def __iter__(self):
         return self
         # -------------------------------------------------------------------- #
@@ -380,12 +410,16 @@ class Farm:
         return self
         # -------------------------------------------------------------------- #
 
-    def __exit__(self, *args, **kwargs):
+    def __exit__(self, exc_type, exc_value, traceback):
         for wt in self.wts: wt.__exit__()
+        self.lag_solver.free() # free c data
+        
+        if exc_type is not None:
+            raise exc_value
+    
         for v in self.viz:  
             if self.out_dir: # export data
                 v.export()
-        self.lag_solver.free() # free c data
         # -------------------------------------------------------------------- #
 
 

@@ -1,9 +1,10 @@
 from __future__ import annotations
-import numpy as np
 from typing import TYPE_CHECKING
 
 import logging
 lg = logging.getLogger(__name__)
+
+import numpy as np
 
 if TYPE_CHECKING:
     from typing import List
@@ -241,7 +242,7 @@ class SensorsPy(Sensors):
         # -------------------------------------------------------------------- #
 
 class SensorsPreprocessed(SensorsPy):
-    def __init__(self, i_bf: int, farm_data_dir: str, export: str, **kwargs):
+    def __init__(self, i_bf: int, farm_data_dir: str, name: str, **kwargs):
         """ Imports the wind turbine estimated states from past simulations. 
 
         Along with the :class:`.StateExport` class, it allows direct 
@@ -256,7 +257,7 @@ class SensorsPreprocessed(SensorsPy):
             Index of the wind turbine
         farm_data_dir : str
             Path to the data directory path.
-        export : str
+        name : str
             Name of the subdirectory where the preprocessed sensor file where 
             saved (ie: export_args['name'])
 
@@ -268,7 +269,7 @@ class SensorsPreprocessed(SensorsPy):
 
         lg.info('Initializing the sensors')
 
-        self.data_path = f'{farm_data_dir}/{export}/wt_{i_bf:02d}.npy'
+        self.data_path = f'{farm_data_dir}/{name}/wt_{i_bf:02d}.npy'
 
         self.data   = np.load(self.data_path, allow_pickle=True)[()]
 
@@ -281,3 +282,40 @@ class SensorsPreprocessed(SensorsPy):
         self._buffer_it = 0
         # -------------------------------------------------------------------- #
 
+C2TPI = 2*np.pi
+
+class SensorsDecoy(Sensors):
+    def __init__(self, fs: float, time_bnds: List[float], **kwargs):
+        self.fs     = fs
+        self.time   = np.arange(*time_bnds, 1/fs) 
+        self.n_time = len(self.time)
+        self._buffer_it = 0
+        # -------------------------------------------------------------------- #
+
+    def reset(self):
+        self._buffer_it = 0
+        # -------------------------------------------------------------------- #
+        
+    def iterate(self):
+        if self._buffer_it < self.n_time - 1:
+            self._buffer_it = self._buffer_it + 1
+            return self.get_buffer_data('time')
+        else:
+            raise StopIteration()
+        # -------------------------------------------------------------------- #
+    
+
+    def get_buffer_data(self, fld: str, i_b:int=None) -> float:
+        if fld == 'time':
+            return self.time[self._buffer_it]
+        else:
+            raise ValueError(f'{fld} not available')
+        # -------------------------------------------------------------------- #
+
+    def __contains__(self, fld: str):
+        return fld=='time'
+        # -------------------------------------------------------------------- #
+
+    def __len__(self):
+        return self.n_time
+        # -------------------------------------------------------------------- #

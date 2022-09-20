@@ -17,9 +17,10 @@ if TYPE_CHECKING:
 
 class Viz_rews(Viz):
     farm: Farm
+    viz_type = 'rews'
 
-    def __init__(self, farm: Farm, t_ref: List(float), u_ref: List(float),
-                 x_interp: float, fs_flag: bool = False, wt: Turbine = None,
+    def __init__(self, farm: Farm, x_interp: float, t_ref: List(float) = None,
+                 u_ref: List(float) = None, fs_flag: bool = False, wt: Turbine = None,
                  xlim: List[float] = None, ylim: List[float] = None,
                  u_norm: float = None, diag: bool = True):
         """ Extracts the Rotor Effective Wind Speed (REWS) at the ``x_interp`` 
@@ -68,8 +69,10 @@ class Viz_rews(Viz):
         if self.fs_flag:
             self.data['u_fs_mod'] = np.ones(len(farm)) * np.nan
 
-        self.data['t_ref'] = t_ref
-        self.data['u_ref'] = u_ref
+        self.ref_flag = t_ref is not None and u_ref is not None
+        if self.ref_flag:
+            self.data['t_ref'] = t_ref
+            self.data['u_ref'] = u_ref
 
         # Mask center computation
         self.x_interp = x_interp
@@ -80,7 +83,7 @@ class Viz_rews(Viz):
         self.xlim   = xlim
         self.ylim   = ylim
         self.u_norm = u_norm or farm.af.D 
-        self.diag   = diag
+        self.diag   = diag and self.ref_flag
 
         self._it = 0
         self._was_plot = False
@@ -115,7 +118,8 @@ class Viz_rews(Viz):
     def _data_clean(self):
         self.data['t_mod']    = self.data['t_mod'][:self._it]
         self.data['u_mod']    = self.data['u_mod'][:self._it]
-        self.data['u_fs_mod'] = self.data['u_fs_mod'][:self._it]
+        if self.fs_flag:
+            self.data['u_fs_mod'] = self.data['u_fs_mod'][:self._it]
         # -------------------------------------------------------------------- #
     
     def _export(self):
@@ -125,7 +129,7 @@ class Viz_rews(Viz):
         else:
             str_id = f'{self.x_interp[0]:.0f}_{self.x_interp[1]:.0f}_{self.x_interp[2]:.0f}'
 
-        np.save(f'{self.farm.out_dir}/rews_{str_id}.npy', self.data, allow_pickle=True)
+        self.__savenpy__(f'rews_{str_id}.npy', self.data, allow_pickle=True)
         # -------------------------------------------------------------------- #
 
     def plot(self):
@@ -134,7 +138,7 @@ class Viz_rews(Viz):
         
         viz_rews_all = [v for v in self.farm.viz if isinstance(v, Viz_rews)]
         for v in viz_rews_all:
-            v.data_clean()
+            v.__data_clean__()
 
         normx = lambda _x: (_x)/(self.farm.af.D/self.u_norm)
         normy = lambda _y: (_y)/(self.u_norm)
@@ -150,16 +154,15 @@ class Viz_rews(Viz):
         for i in range(self.farm.n_wts):
             viz_rews_wt[i].sort()   
         
+        viz_rews_wt_map = [(i_wt, v_wt) for i_wt, v_wt in enumerate(viz_rews_wt) if v_wt]
         # Plotting Viz_rews linked to a WT
-        for i_wt, v_wt in enumerate(viz_rews_wt):
+        for i_wt, v_wt in viz_rews_wt_map:
             i_wt_bf = self.farm.wts[i_wt].i_bf
-            _, axs = plt.subplots(len(v_wt), 1, sharex=True, figsize=(8,8), squeeze=False)
+            figsize = (8, len(v_wt)*2)
+            _, axs = plt.subplots(len(v_wt), 1, sharex=True, figsize=figsize, squeeze=False)
 
             for ax, v in zip(axs[:,0], v_wt):
                 plt.sca(ax)
-                plt.plot( normx(v.data['t_ref']),
-                          normy(v.data['u_ref']),
-                          **ls.REF)
                 plt.plot( normx(v.data['t_mod']),
                           normy(v.data['u_mod']), 
                           **ls.MOD)
@@ -167,12 +170,16 @@ class Viz_rews(Viz):
                     plt.plot( normx(v.data['t_mod']) ,
                               normy(v.data['u_fs_mod']),
                                **ls.MOD | {'linestyle':'--'}) 
+                if v.ref_flag:
+                    plt.plot( normx(v.data['t_ref']),
+                            normy(v.data['u_ref']),
+                            **ls.REF)
 
                 dx = v.x_interp[0] - v.wt.x[0] 
                 plt.ylabel(r'$\frac{1}{U_{ABL}}u_{RE}(t,'+f'{dx/v.farm.af.D:.1f}'+r'D)$')
 
-                _ylim = [ np.floor(min(normx(v_wt[0].data['u_ref']))),
-                          max(np.ceil(max(normx(v_wt[0].data['u_ref']))), 1.1) ]
+                _ylim = [ np.floor(min(normx(v_wt[0].data['u_mod']))),
+                          max(np.ceil(max(normx(v_wt[0].data['u_mod']))), 1.1) ]
                 plt.xlim(v.xlim or normx(v.data['t_mod'][[0,-1]]))
                 plt.ylim(v.ylim or _ylim)
 
@@ -207,7 +214,7 @@ class Viz_rews(Viz):
             plt.tight_layout()
             plt.subplots_adjust(left=0.12, right=0.99, hspace=0.1)
 
-            self.savefig(f'rews_wt{i_wt_bf}.pdf')
+            self.__savefig__(f'rews_wt{i_wt_bf}.pdf')
 
         for v_wt in viz_rews_all:
             raise NotImplementedError('plot not implement if no parent turbine selected.')

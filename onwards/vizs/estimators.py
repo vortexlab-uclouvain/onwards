@@ -1,4 +1,5 @@
 from __future__ import annotations
+from posixpath import lexists
 from typing import TYPE_CHECKING
 
 import logging
@@ -16,6 +17,8 @@ if TYPE_CHECKING:
     from ..farm import Farm
 
 class Viz_estimators(Viz):
+    viz_type = 'estimators'
+
     def __init__(self, farm: Farm, states: List[str], measurements: List[str], 
                  labels: List[str], units: List[str], offset: List[float]=None, 
                  ylim: List[List[float, float]]=None, 
@@ -113,12 +116,13 @@ class Viz_estimators(Viz):
 
     def _export(self):
         out = {'time':self.time,'label':self.l_map,'data':self.data}
-        np.save(f'{self.farm.out_dir}/estimator_data.npy', out, allow_pickle=True)
+        self.__savenpy__(f'estimator_data.npy', out, allow_pickle=True)
         # -------------------------------------------------------------------- #
 
     def _plot(self):
          for i_wt, d_wt in enumerate(self.data):
-            _, axs = plt.subplots(len(d_wt), 1, squeeze=False)
+            figsize = (8, len(d_wt)*2)
+            _, axs = plt.subplots(len(d_wt), 1, squeeze=False, figsize=figsize)
             for ax, s, _, l, o, ylim in zip(axs[:,0], *self.map):
                 plt.sca(ax)
                 
@@ -153,5 +157,5 @@ class Viz_estimators(Viz):
                 plt.ylabel(l)
 
             plt.xlabel('t [s]')
-            self.savefig(f'estimator_wt{self.farm.wts[i_wt].i_bf}.pdf')
+            self.__savefig__(f'estimators_wt{self.farm.wts[i_wt].i_bf}.pdf')
         # -------------------------------------------------------------------- #

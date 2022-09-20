@@ -19,12 +19,6 @@ class Est_fld_fromdata(Estimator):
         :Input(s) measurements: * User defined (cfr :meth:`.Est_fld_fromdata.update`)
         
         :State(s) computed:     * User defined (cfr :meth:`.Est_fld_fromdata.update`)
-        
-        Note
-        ----
-        This Estimator can be used to bypass the Turbine's state estimation 
-        procedure by setting both ``avail_states`` and ``est_args`` to 
-        ``MINIMAL_STATES``.
         """
         meas   = est_args['meas_in']
         states = est_args['state_out']
@@ -36,4 +30,3 @@ class Est_fld_fromdata(Estimator):
     def update(self):
         for (s, m) in zip(self.states, self.meas):
             self.wt.states[s] = self.probe(m)
-

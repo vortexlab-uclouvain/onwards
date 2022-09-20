@@ -11,15 +11,15 @@ from .viz import Viz
 if TYPE_CHECKING:
     from ..farm import Farm
 
-CMAP = 'tab20'
+_CMAP = 'tab20'
+
+_STR_LS = [ {'s':8,'marker':'o','label':'wake', 'lw':0.78}, 
+            {'s':10,'marker':'^','label':'flow', 'facecolors':'w', 'lw':0.78},
+            {'s':8,'marker':'o', 'lw':1}                 ]
 
 class Viz_particles(Viz):
-
-    str_ls = [ {'s':8,'marker':'o','label':'wake', 'lw':0.78}, 
-               {'s':10,'marker':'^','label':'flow', 'facecolors':'w', 'lw':0.78},
-               {'s':8,'marker':'o', 'lw':1}                 ]
-    vel_str_id = ['u', 'w']
-
+    viz_type = 'particles'
+    
     def __init__(self, farm: Farm, *args, **kwargs):
         """ Plots the position of the wake and ambient flow particles
 
@@ -36,17 +36,17 @@ class Viz_particles(Viz):
         plt.sca(self.axs[0])
         self.part_plt = [None] * 2
 
-        for i, (s, l) in enumerate(zip(['W', 'F'], self.str_ls)):
-            c = plt.get_cmap(CMAP)(self.farm.lag_solver.get_part_iwt(s))
+        for i, (s, l) in enumerate(zip(['W', 'F'], _STR_LS)):
+            c = plt.get_cmap(_CMAP)(self.farm.lag_solver.get_part_iwt(s))
             self.part_plt[i] = plt.scatter(self.farm.lag_solver.get(s, 'x_p', comp=0)/self.farm.af.D,
                                            self.farm.lag_solver.get(s, 'x_p', comp=1)/self.farm.af.D,
                                            edgecolors = c,
                                            **({'facecolors':c}|l))
             plt.ylabel('$z/D$')
-        plt.legend()
+        plt.legend(loc='upper right')
 
-        plt.xlim( x/self.farm.af.D for x in [self.farm.lag_solver.grid.x_bnds[0], self.farm.lag_solver.grid.x_bnds[-1]])
-        plt.ylim( x/self.farm.af.D for x in [self.farm.lag_solver.grid.z_bnds[0], self.farm.lag_solver.grid.z_bnds[-1]])
+        plt.xlim( x/self.farm.af.D for x in self.farm.lag_solver.grid.x_bnds )
+        plt.ylim( x/self.farm.af.D for x in self.farm.lag_solver.grid.z_bnds )
 
         self.vel_plt = [[None for i in range(2)] for i in range(2)]
 
@@ -55,12 +55,11 @@ class Viz_particles(Viz):
             for i_f, f_str in enumerate(['u_p','uf_p']):
                 self.vel_plt[i_f][comp] = plt.scatter(self.farm.lag_solver.get('F', 'x_p',  comp=0   )/self.farm.af.D,
                                                       self.farm.lag_solver.get('F', f_str,  comp=comp),
-                                                      c = plt.get_cmap(CMAP)(self.farm.lag_solver.get_part_iwt('F')),
+                                                      c = plt.get_cmap(_CMAP)(self.farm.lag_solver.get_part_iwt('F')),
                                                       alpha= 1 - 0.9 * i_f,
-                                                      **self.str_ls[0])
-            plt.hlines(7,0,30)
+                                                      **_STR_LS[0])
             plt.ylabel(['$u$','$w$'][comp]+r' [ms$^{-1}$]')
-            plt.xlim([0,30])
+            plt.xlim( x/self.farm.af.D for x in self.farm.lag_solver.grid.x_bnds )
 
         plt.sca(self.axs[1]); plt.ylim((0,12))
         plt.sca(self.axs[2]); plt.ylim((-1,1))
@@ -90,7 +89,7 @@ class Viz_particles(Viz):
         plt.draw(); plt.pause(0.000001); 
         # -------------------------------------------------------------------- #
 
-    def _data_get(self, *args, **kwargs):
+    def _data_clean(self, *args, **kwargs):
         pass
         # -------------------------------------------------------------------- #
 

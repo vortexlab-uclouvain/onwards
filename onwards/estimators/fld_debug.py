@@ -30,12 +30,12 @@ class Est_fld_debug(Estimator):
         # -------------------------------------------------------------------- #
 
     def update(self):
-        self.wt.states['w_inc'] = np.sin(self.wt.t/32)
-        self.wt.states['w_fs']  = np.sin(self.wt.t/32)
-        self.wt.states['u_inc'] = 8
-        self.wt.states['u_fs']  = 8
+        self.wt.states['w_inc'] = 0.5 * np.sin(self.wt.t/32)
+        self.wt.states['w_fs']  = 0.5 * np.sin(self.wt.t/32)
+        self.wt.states['u_inc'] = 8 + .7 * np.sin(self.wt.t/12)  + 0.1 * np.sin(self.wt.t/5)
+        self.wt.states['u_fs']  = 8 + .7 *  np.sin(self.wt.t/12) + 0.1 * np.sin(self.wt.t/5)
         self.wt.states['ct']    = 0.8
-        self.wt.states['ti']    = 0.1
+        self.wt.states['ti']    = 0.1 + np.sin(self.wt.t/10)/10
         self.wt.states['yaw']   = 0
         # -------------------------------------------------------------------- #
 

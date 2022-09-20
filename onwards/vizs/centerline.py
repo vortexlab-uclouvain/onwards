@@ -31,7 +31,7 @@ class Centerline:
             mask_type : (str, optional)
                 Mask type (eg: ``gaussian``), by default, None.
             time_zero_origin: (bool, optional)
-                If true, time vector is shifted so that ``self.time[0]=0``by 
+                If true, time vector is shifted so that ``self.time[0]=0`` by 
                 default, False.
         Note
         ----
@@ -97,7 +97,10 @@ except ImportError:
 I_MASK = 0
 
 class Viz_centerline(Viz):
-    def __init__(self, farm: Farm, bf_dir: str, wm_str_id: str, i_mask: int = None):
+    viz_type = 'centerline'
+
+    def __init__(self, farm: Farm, bf_dir: str = None, wm_str_id: str = None, 
+                                                            i_mask: int = None):
         """ Extracts the position of the wake centerline from the Lagrangian flow 
         model and from the LES reference data.
 
@@ -119,6 +122,8 @@ class Viz_centerline(Viz):
         Exception
             If any of the wake centerline origin does not match the associated 
             Turbine location.
+        ValueError
+            If bf_dir is not compatible with previous Viz_centerline initialization.
 
         Note
         ----
@@ -136,11 +141,16 @@ class Viz_centerline(Viz):
         data = next((v for v in self.farm.viz if isinstance(v, Viz_centerline)), None)
 
         if data: # data was already imported
+            if data.bf_dir != bf_dir:
+                raise ValueError('All Viz_centerline must share the same bf_dir.')
+            else:
+                self.bf_dir = data.bf_dir
+
             self.data['x']       = data.x
 
             self.data['t_ref']   = data.t_ref
             self.data['t_mod']   = data.t_mod
-
+            
             self.data['zc_ref']  = data.zc_ref
             self.data['zc_mod']  = data.zc_mod
 
@@ -152,47 +162,77 @@ class Viz_centerline(Viz):
             self._it = None
 
         else :   # data needs to be imported
-            wm_dir = f'{bf_dir}/WM_centerline/'
+            self.bf_dir = bf_dir
 
-            wm_fid = [fid for fid in os.listdir(wm_dir) if fid.startswith(wm_str_id)]
-            it0_str = wm_fid[0].rsplit('_',1)[1]
+            if self.bf_dir is not None:
+                wm_dir = f'{self.bf_dir}/WM_centerline/'
 
-            gaussian_flag = 'gaussian' if 'gaussian' in wm_str_id else False
-            if i_mask:
-                self.n_masks = 1
-                self.i_masks = [i_mask]
-            else:
-                self.n_masks  = len([fid for fid in wm_fid if fid.rsplit('_',2)[-2]=='w00'])
-                self.i_masks = range(self.n_masks)
+                wm_fid = [fid for fid in os.listdir(wm_dir) if 'w00' in fid]
+                it0    = wm_fid[0].rsplit('_', 1)[1]
 
-            self.data['x']      = np.empty(farm.n_wts, dtype=object)
+                fid_masks  = [fid.rsplit('_', 2)[0] for fid in wm_fid]
+                fid_paths  = [f'{wm_dir}/{fm}' for fm in fid_masks]
+                fid_gmasks = ['gaussian' if 'gaussian' in fm else False
+                              for fm in fid_masks]
 
-            self.data['zc_ref'] = np.empty(farm.n_wts, dtype=object)
-            self.data['zc_mod'] = np.empty(farm.n_wts, dtype=object)
+                if i_mask:
+                    self.n_masks = 1
+                    self.i_masks = [i_mask]
+                else:
+                    self.n_masks = len(fid_masks)
+                    self.i_masks = range(self.n_masks)
 
-            for i_wt, wt in enumerate(self.farm.wts):
-                wm_path = lambda i_mask: f'{wm_dir}{wm_str_id}{i_mask:02d}_w{wt.i_bf:02d}_{it0_str}'
+                self.data['x']      = np.empty(farm.n_wts, dtype=object)
 
-                # n_mask masks are available for each wake tracked
-                wms = [Centerline(wm_path(i), mask_type=gaussian_flag) for i in self.i_masks]
-                
-                # initializing data
-                n_t = len(farm)
-                n_x = len(wms[0].x)
+                self.data['zc_ref'] = np.empty(farm.n_wts, dtype=object)
+                self.data['zc_mod'] = np.empty(farm.n_wts, dtype=object)
 
-                self.data['t_ref'] = wms[0].time
-                self.data['t_mod'] = np.ones(n_t) * np.nan
-                
-                self.data['x'][i_wt] = wms[0].x
+                for i_wt, wt in enumerate(self.farm.wts):
 
-                self.data['zc_ref'][i_wt] = [wm.z for wm in wms]
-                self.data['zc_mod'][i_wt] = [np.zeros( (n_t, n_x) )]
+                    # n_mask masks are available for each wake tracked
+                    wms = [ Centerline( f'{fid_paths[i]}_w{wt.i_bf:02d}_{it0}', 
+                                        mask_type= fid_gmasks[i] ) 
+                           for i in self.i_masks ]
+                    
+                    # initializing data
+                    n_t = len(farm)
+                    n_x = len(wms[0].x)
 
-                if np.sqrt( (  np.sqrt((self.data['x'][i_wt][0]-wt.x[0])**2 
-                                     + (self.data['zc_ref'][i_wt][0][-1,0]-wt.x[2])**2 )) > farm.af.D ):
-                    raise Exception(  f'Wake tracking initial position and wind'
-                                    + f'turbine location do not match.')
+                    self.data['t_ref'] = wms[0].time
+                    self.data['t_mod'] = np.ones(n_t) * np.nan
+                    
+                    self.data['x'][i_wt] = wms[0].x
+
+                    self.data['zc_ref'][i_wt] = [wm.z for wm in wms]
+                    self.data['zc_mod'][i_wt] = [np.zeros( (n_t, n_x) )]
+
+                    if np.sqrt( (  np.sqrt((self.data['x'][i_wt][0]-wt.x[0])**2 
+                                        + (self.data['zc_ref'][i_wt][0][-1,0]-wt.x[2])**2 )) > farm.af.D ):
+                        raise Exception(  f'Wake tracking initial position and wind'
+                                        + f'turbine location do not match.')
             
+            else: # if no LES data is provided, override the reference data
+                dx = self.farm.lag_solver.grid.dx
+                x_loc = np.arange(0,self.farm.lag_solver.grid.margin[0][1],dx)
+
+                n_t = len(farm)
+                n_x = len(x_loc)
+
+                self.data['x']      = np.empty(farm.n_wts, dtype=object)
+
+                self.data['zc_ref'] = np.empty(farm.n_wts, dtype=object)
+                self.data['zc_mod'] = np.empty(farm.n_wts, dtype=object)
+
+                self.data['t_ref'] = np.ones(n_t) * np.nan
+                self.data['t_mod'] = self.data['t_ref']
+                
+                self.n_masks = 1
+                for i_wt, wt in enumerate(self.farm.wts):
+                    self.data['x'][i_wt] = wt.x[0] + x_loc
+
+                    self.data['zc_ref'][i_wt] = [np.zeros( (n_t, n_x) ) + np.nan]
+                    self.data['zc_mod'][i_wt] = [np.zeros( (n_t, n_x) ) + np.nan]
+
             self._it = 0
         
         # -------------------------------------------------------------------- #
@@ -260,7 +300,14 @@ class Viz_centerline(Viz):
     def _export(self):
         # data should only be exported once
         if self._it is not None: 
-            np.save(f'{self.farm.out_dir}/wcl_data.npy', self.data, allow_pickle=True)
+            return
+
+        if self.bf_dir is None:
+            data = {self.data for k in ['x', 't_mod', 'zc_mod']}
+        else:
+            data = self.data
+
+        self.__savenpy__(f'centerline_data.npy', data, allow_pickle=True)
         # -------------------------------------------------------------------- #
 
     def _plot_(self):
@@ -268,11 +315,11 @@ class Viz_centerline(Viz):
         # -------------------------------------------------------------------- #
 
 class Viz_centerline_xloc(Viz_centerline):
-    def __init__(self, farm: Farm, bf_dir: str, wm_str_id: str, x_loc: List[float],
+    def __init__(self, farm: Farm, x_loc: List[float], bf_dir: str = None, wm_str_id: str = None,
                  i_mask: int = None, xlim: List[float] = None, ylim: List[float] = None,
                  u_norm: float = None, diag: bool = True):
-        """ Extracts the position of the wake centerline at the x_loc location and 
-        compares it to the LES reference data.
+        """ Extracts the position of the wake centerline at the ``x_loc`` location 
+        and compares it to the LES reference data.
 
         Parameters
         ----------
@@ -303,10 +350,10 @@ class Viz_centerline_xloc(Viz_centerline):
         """      
         super().__init__(farm, bf_dir, wm_str_id, i_mask)
         self.x_loc  = x_loc
-        self.x_lim   = xlim
+        self.x_lim  = xlim
         self.ylim   = ylim
         self.u_norm = u_norm or farm.af.D 
-        self.diag   = diag
+        self.diag   = diag and bf_dir is not  None
         # -------------------------------------------------------------------- #
 
     def _plot(self):
@@ -322,14 +369,15 @@ class Viz_centerline_xloc(Viz_centerline):
             for i_mask in range(self.n_masks):
                 zc_ref[i_mask] = self.data_get( 'zc', 'ref', i_wt=i_wt, i_mask=i_mask)
             
+            figsize = (8, len(self.x_loc)*2)
             fig, axs = plt.subplots(len(self.x_loc), 1, sharex=True,
-                                      sharey=True, figsize=(6,8), squeeze=False)
+                                      sharey=True, figsize=figsize, squeeze=False)
 
             for ax, x_ax in zip(axs, self.x_loc):
                 ax = ax[0]
 
                 # Checking if x_loc is valid for meandering
-                x_wt_all = np.load(f'{self.farm.data_dir}/geo.npy')
+                x_wt_all = self.farm._load_geo(self.farm.data_dir)
                 i_wt_row = np.where(np.abs(x_wt_all[:,2]-wt.x[2])<1E-3)
                 x_wt_row = np.sort(x_wt_all[i_wt_row,0])
                 row_idx  = np.argmin(np.abs(x_wt_row-wt.x[0]))+1                
@@ -346,9 +394,10 @@ class Viz_centerline_xloc(Viz_centerline):
                     normy = lambda _y: (_y-wt.x[2])/self.farm.af.D
 
                     # plotting data
-                    plt.plot(normx(t_ref), 
-                             normy(zc_ref[I_MASK][:,idx_x]), 
-                             **ls.REF)                    
+                    if self.bf_dir:
+                        plt.plot(normx(t_ref), 
+                                normy(zc_ref[I_MASK][:,idx_x]), 
+                                **ls.REF)                    
                     plt.plot(normx(t_mod), 
                              normy(zc_mod[:,idx_x]), 
                              **ls.MOD)
@@ -402,5 +451,5 @@ class Viz_centerline_xloc(Viz_centerline):
             plt.tight_layout()
             plt.subplots_adjust(left=0.12, right=0.99, hspace=0.1)
 
-            self.savefig(f'wcl_xloc_wt{wt.i_bf:02d}.pdf')
+            self.__savefig__(f'centerline_xloc_wt{wt.i_bf:02d}.pdf')
         # -------------------------------------------------------------------- #

@@ -12,9 +12,10 @@ __pycache__
 
 # OnWaRDS file
 .runid
+onwards_run_*/
 
 # doc
 docs/build
 
 # local folder
-local/*
+local

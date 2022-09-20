@@ -53,6 +53,7 @@ class Grid():
         margin = [ [ 1*self.farm.af.D , 12*self.farm.af.D ],\
                       [ 2*self.farm.af.D ,  2*self.farm.af.D ] ]
         margin = self.set.setdefault('margin', margin)
+        self.margin = margin
 
         # Main domain bounds
         bnds_check = False
@@ -91,11 +92,11 @@ class Grid():
         self.set['z_bnds'] = self.z_bnds
 
         # Mesh initialization
-        dx = self.set.setdefault('dx', 20)
-        dz = self.set.setdefault('dz', 20)
+        self.dx = self.set.setdefault('dx', 20)
+        self.dz = self.set.setdefault('self.dz', 20)
 
-        self._x = np.arange(self.x_bnds[0], self.x_bnds[1]+dx, dx, dtype=np.float)
-        self._z = np.arange(self.z_bnds[0], self.z_bnds[1]+dz, dz, dtype=np.float)
+        self._x = np.arange(self.x_bnds[0], self.x_bnds[1]+self.dx, self.dx, dtype=np.float)
+        self._z = np.arange(self.z_bnds[0], self.z_bnds[1]+self.dz, self.dz, dtype=np.float)
 
         self.xx, self.zz = np.meshgrid(self._x, self._z, indexing='ij')
         self.mesh = self.xx, self.zz
@@ -110,7 +111,7 @@ class Grid():
         lg.info('  Grid boundaries : x- {} > x+ {} | z- {} > z+ {} [m]' \
                                                        .format(*self.x_bnds, *self.z_bnds))
         lg.info('  Grid spacing    : dx {} | dz {}  [m] ({} points)' \
-                                        .format(dx, dz, np.product(self.xx.shape)))      
+                                        .format(self.dx, self.dz, np.product(self.xx.shape)))      
         # -------------------------------------------------------------------- #
 
     def update(self):

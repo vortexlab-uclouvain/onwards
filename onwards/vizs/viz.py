@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import logging 
 lg = logging.getLogger(__name__)
 
+import os
 import numpy as np
 import matplotlib.pyplot  as plt
 
@@ -11,6 +12,8 @@ if TYPE_CHECKING:
     from ..farm import Farm
 
 class Viz():
+    viz_type = None
+    
     def __init__(self, farm: Farm):
         """ Inits a Viz object
 
@@ -44,7 +47,17 @@ class Viz():
         pass
         # -------------------------------------------------------------------- #
 
-    def savefig(self, fid:str, *args, **kwargs):
+    def __dirgen__(self):
+        """ 
+        Generates the output directory name 
+        """
+        export_dir = f'{self.farm.out_dir}/{self.viz_type}'
+        if not os.path.exists(export_dir):
+            os.makedirs(export_dir)
+        return export_dir
+        # -------------------------------------------------------------------- #
+
+    def __savefig__(self, fid:str, *args, **kwargs):
         """ Saves the current figure 
 
         Parameters
@@ -53,10 +66,25 @@ class Viz():
             Name of the output file.
         """        
         if self.farm.out_dir:
-            plt.savefig(f'{self.farm.out_dir}/{fid}', *args, **kwargs)
+            plt.savefig(f'{self.__dirgen__()}/{fid}', *args, **kwargs)
         # -------------------------------------------------------------------- #
 
-    def data_clean(self):
+
+    def __savenpy__(self, fid:str, data:Any, *args, **kwargs):
+        """ Saves the requested data as a npy file 
+
+        Parameters
+        ----------
+        fid : str
+            Name of the output file.
+        data: Any
+            Data that should be saved
+        """        
+        if self.farm.out_dir:
+            np.save(f'{self.__dirgen__()}/{fid}', data, *args, **kwargs)
+        # -------------------------------------------------------------------- #
+
+    def __data_clean__(self):
         """ 
         Cleans the Viz data (wrapper for ``_data_clean``)
         """        
@@ -70,7 +98,7 @@ class Viz():
         """ 
         Wrapper for ``_data_get``
         """       
-        self.data_clean()
+        self.__data_clean__()
         return self._data_get(*args, **kwargs)
         # -------------------------------------------------------------------- #
 
@@ -83,7 +111,7 @@ class Viz():
         ``export`` is automatically triggered when calling ``farm.__exit__`` 
         method.
         """        
-        self.data_clean()
+        self.__data_clean__()
         if not self._was_exported:
             self._export()
         # -------------------------------------------------------------------- #
@@ -92,7 +120,7 @@ class Viz():
         """ 
         Plots the Viz data (wrapper for ``_plot``)
         """        
-        self.data_clean()
+        self.__data_clean__()
         return self._plot()
         # -------------------------------------------------------------------- #
 

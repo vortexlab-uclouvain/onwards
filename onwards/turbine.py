@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 import logging
 
-from onwards.estimators.estimator import Estimator
+from onwards.sensors import SensorsPreprocessed
 lg = logging.getLogger(__name__)
 
 import numpy as np
@@ -131,6 +131,10 @@ class Turbine:
             from .sensors import SensorsPreprocessed
             self.snrs = SensorsPreprocessed(self.i_bf, self.farm.data_dir, **snrs_args)
 
+        elif snrs_args['type']=='SensorsDecoy':
+            from .sensors import SensorsDecoy
+            self.snrs = SensorsDecoy(**snrs_args)
+
         # elif snrs_type=='MySensors': # custom sensors class example
         #     from sensors import MySensors
         #     self.snrs = MySensors()
@@ -207,6 +211,19 @@ class Turbine:
         self.estimators = []
 
         n_estimators = len([e for e in est_args if e.startswith('estimator')])
+
+        # Initializing the direct feed through estimator
+        if isinstance(self.snrs, SensorsPreprocessed):
+            lg.info('Initializing the direct feed through estimator')
+            est_args_pp = { 'type': 'fld_fromdata',
+                            'state_out': MINIMAL_STATES,
+                            'meas_in': MINIMAL_STATES }
+            
+            from .estimators.fld_fromdata  import Est_fld_fromdata  as Estimator
+            self.estimators.append(Estimator(self, avail_states, est_args_pp))
+            avail_states += [s for s in self.estimators[-1].states]
+
+        # Initializing the user-defined estimators
         for i_e in range(n_estimators):
             key = f'estimator{i_e}'
             e_type = est_args[key]['type']
@@ -217,9 +234,6 @@ class Turbine:
 
             elif e_type == 'uincti_kfbem': 
                 from .estimators.uincti_kfbem  import Est_uincti_kfbem  as Estimator
-
-            elif e_type == 'winc_nn':       
-                from .estimators.winc_nn       import Est_winc_nn       as Estimator
 
             elif e_type == 'ct_fromthrust': 
                 from .estimators.ct_fromthrust import Est_ct_fromthrust as Estimator
@@ -254,10 +268,7 @@ class Turbine:
 
         export_args = est_args.get('export', False)
         if export_args:                
-            self.est_export = estimators.StateExportBuffer(self, 
-                                              est_args['export'], 
-                                              export_overwrite=est_args.get('export_overwrite',False),
-                                              states_user=est_args.get('export_user_field',[]))
+            self.est_export = estimators.StateExportBuffer(self, export_args)
         else:
             self.est_export = False
 
