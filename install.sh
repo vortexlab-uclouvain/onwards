@@ -4,7 +4,7 @@ echo "| |  | |_ _\ \  /\  / /_ _| |__) | |  | | (___  "
 echo "| |  | | '_ \ \/  \/ / _' |  _  /| |  | |\___ \ "
 echo "| |__| | | | \  /\  / (_| | | \ \| |__| |____) |"
 echo " \____/|_| |_|\/  \/ \__,_|_|  \_\_____/|_____/ "
-echo "Maxime Lejeune - UCLouvain - 2022           v0.1"
+echo "Maxime Lejeune - UCLouvain - 20.09.2022     v1.0"
 echo ""
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -26,7 +26,15 @@ echo ">> Setting up the OnWaRDS environment"
 echo "">>"$bashPath"
 echo "export ONWARDS_PATH=$(pwd)" >>"$bashPath"
 echo "export PYTHONPATH=\${PYTHONPATH}:\$ONWARDS_PATH" >>"$bashPath"
-source "$bashPath"
+
+ONWARDS_PATH=$(pwd)
+PYTHONPATH=\${PYTHONPATH}:\$ONWARDS_PATH
+
+echo ">> Done!"
+
+# ------------------------------- #
+echo ">> Compiling sources"
+make -C $ONWARDS_PATH/onwards/lagSolver/libc/ lagSolver_c.so
 echo ">> Done!"
 
 # # ------------------------------- #

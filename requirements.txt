@@ -1,20 +1,6 @@
-PYTHON CODE
------------
-# Python Standard Library
-ctypes     1.1.0       
-logging    0.5.1.2 
-sys         
-os         
-time   
+python 3.9
 
-# Additional libraries
-matplotlib 3.4.3   based on the PSF license                 https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE
-numpy      1.21.2  BSD 3-Clause "New" or "Revised" License  https://github.com/numpy/numpy/blob/main/LICENSE.txt
-scipy      1.6.1   BSD 3-Clause "New" or "Revised" License  https://github.com/scipy/scipy/blob/main/LICENSE.txt
-
-C CODE
-------
-# c Standard Library
-stdio
-stdlib
-math
+# Python libraries
+matplotlib 3.4.3   
+numpy      1.21.2
+scipy      1.6.1
