@@ -189,12 +189,12 @@ int in_bnds_FlowModel(FlowModel *fm, double *x, double *sigma) {
 
 double compute_weight_FlowModel(FlowModel *fm, double *x, double* sigma) {
     int i, skip;
-    double w_skip, w_acc;
+    double w_skip;//, w_acc;
 
     skip   = ( in_bnds_FlowModel(fm, x, sigma) ) ? 1 : 5;
     w_skip = fm->n/floor(fm->n/skip);
     
-    w_acc = 0;
+    // w_acc = 0;
     for ( i = 0; i < fm->n; i+=skip) { 
         project_particle_frame_FlowModel(fm, i, x, fm->xi_, fm->r_);
 
@@ -203,7 +203,7 @@ double compute_weight_FlowModel(FlowModel *fm, double *x, double* sigma) {
                                  - pow(fm->t_p[i]/sigma[2], 2))/2.  ) ) ;
         fm->w_shep[i] += 1e-16;
         fm->w_shep[i] *= w_skip;
-        w_acc += fm->w_shep[i] ; 
+        // w_acc += fm->w_shep[i] ; 
     } 
 
     return skip;

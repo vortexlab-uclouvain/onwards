@@ -24,6 +24,7 @@ SpeedDeficit* init_SpeedDeficit(WakeModel *wm) {
         sd->du_xi      = du_xi_BPA;
         sd->du_xi_r    = du_xi_r_BPA;
         sd->du_xi_ravg = du_xi_ravg_BPA;
+        break;
 
     // case 1: // User Defined Model
         // sd->n_wv_      = 42;
@@ -31,9 +32,11 @@ SpeedDeficit* init_SpeedDeficit(WakeModel *wm) {
         // sd->du_xi      = du_xi_BPA;
         // sd->du_xi_r    = du_xi_r_BPA;
         // sd->du_xi_ravg = du_xi_ravg_BPA;
+        // break;
 
     default:
         sd->n_wv_ = 0;
+        printf("ERROR: model type (%i) not recognized.", wm->set->sd_type);
     }
 
     sd->wv_   = ((double**) malloc(sizeof(double*)*sd->n_wv_));
