@@ -99,8 +99,7 @@ I_MASK = 0
 class Viz_centerline(Viz):
     viz_type = 'centerline'
 
-    def __init__(self, farm: Farm, bf_dir: str = None, wm_str_id: str = None, 
-                                                            i_mask: int = None):
+    def __init__(self, farm: Farm, bf_dir: str = None, i_mask: int = None):
         """ Extracts the position of the wake centerline from the Lagrangian flow 
         model and from the LES reference data.
 
@@ -110,9 +109,6 @@ class Viz_centerline(Viz):
             Parent :class:`.Farm` Object
         bf_dir : str
             Path to the reference LES data.
-        wm_str_id : str
-            Template for the wake centerline filename generation (eg: 
-            ``WMcenterline_gaussianMask``)
         i_mask : int, optional
             Index of the mask used for the wake centerline tracking for the LES 
             reference data, if None (by default), all available masks are imported.
@@ -299,7 +295,7 @@ class Viz_centerline(Viz):
     
     def _export(self):
         # data should only be exported once
-        if self._it is not None: 
+        if self._it is None: 
             return
 
         if self.bf_dir is None:
@@ -315,7 +311,7 @@ class Viz_centerline(Viz):
         # -------------------------------------------------------------------- #
 
 class Viz_centerline_xloc(Viz_centerline):
-    def __init__(self, farm: Farm, x_loc: List[float], bf_dir: str = None, wm_str_id: str = None,
+    def __init__(self, farm: Farm, x_loc: List[float], bf_dir: str = None, 
                  i_mask: int = None, xlim: List[float] = None, ylim: List[float] = None,
                  u_norm: float = None, diag: bool = True):
         """ Extracts the position of the wake centerline at the ``x_loc`` location 
@@ -327,9 +323,6 @@ class Viz_centerline_xloc(Viz_centerline):
             Parent :class:`.Farm` Object
         bf_dir : str
             Path to the reference LES data.
-        wm_str_id : str
-            Template for the wake centerline filename generation (eg: 
-            ``WMcenterline_gaussianMask``)
         i_mask : int, optional
             Index of the mask used for the wake centerline tracking for the LES 
             reference data, if None (by default), all available masks are imported.
@@ -348,7 +341,7 @@ class Viz_centerline_xloc(Viz_centerline):
         :class:`.Viz_centerline`
 
         """      
-        super().__init__(farm, bf_dir, wm_str_id, i_mask)
+        super().__init__(farm, bf_dir, i_mask)
         self.x_loc  = x_loc
         self.x_lim  = xlim
         self.ylim   = ylim
