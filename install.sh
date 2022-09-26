@@ -30,7 +30,7 @@ echo "export ONWARDS_PATH=$(pwd)" >>"$BASH_PATH"
 echo "export PYTHONPATH=\${PYTHONPATH}:\$ONWARDS_PATH" >>"$BASH_PATH"
 
 export ONWARDS_PATH=$(pwd)
-export PYTHONPATH=\${PYTHONPATH}:\$ONWARDS_PATH
+export PYTHONPATH=${PYTHONPATH}:${ONWARDS_PATH}
 
 echo ">> Done!"
 

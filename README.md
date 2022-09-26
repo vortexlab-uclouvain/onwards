@@ -7,7 +7,13 @@ Welcome to OnWaRDS!
 
 Quick start
 -----------
-``install.sh`` will guide you through the installation process (sett up environment variable and compile sources).
+``install.sh`` will guide you through the installation process (set up environment variable and compile sources).
+
+```python:
+git clone git@git.immc.ucl.ac.be:lejeunemax/OnWaRDS.git
+cd OnWaRDS
+source install.sh
+```
 
 OnWaRDS was developed using Python 3.9. The following modules are required:
 * matplotlib 3.4.3
@@ -15,6 +21,11 @@ OnWaRDS was developed using Python 3.9. The following modules are required:
 * scipy      1.6.1
 
 ``templates`` provides a few OnWaRDS configurations examples and will guide you through the different step required to perform a farm simulation. 
+
+```python:
+cd templates
+python 00_sandbox.py
+```
 
 Documentation
 -------------
