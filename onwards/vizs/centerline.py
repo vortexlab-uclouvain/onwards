@@ -299,7 +299,7 @@ class Viz_centerline(Viz):
             return
 
         if self.bf_dir is None:
-            data = {self.data for k in ['x', 't_mod', 'zc_mod']}
+            data = {k: self.data[k] for k in ['x', 't_mod', 'zc_mod']}
         else:
             data = self.data
 

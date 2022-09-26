@@ -118,11 +118,11 @@ class Viz_velfield(Viz):
         # AX0: model plot
         i_ax = 0
         plt.sca(self.axs[i_ax][0])
-        self.im_f3 = plt.imshow( self.grid.xx,
+        self.im_mod = plt.imshow( self.grid.xx,
                                  extent=[*[x/af_d for x in self.grid.x_bnds],
                                          *[z/af_d for z in self.grid.z_bnds]], 
                                  **self.im_args)
-        self.plt_wt_f3 = self._set_layout(plt.gca(), self.im_f3, skip_x=bool(data_fid))
+        self.plt_wt_mod = self._set_layout(plt.gca(), self.im_mod, skip_x=bool(data_fid))
 
         # AX1: reference data plot
         self.data_fid = data_fid
@@ -131,7 +131,7 @@ class Viz_velfield(Viz):
             plt.sca(self.axs[i_ax][0])
             self.__init_ref__(data_fid)
 
-        uu_f3 = self.grid.u_compute()[COMP]
+        uu_mod = self.grid.u_compute()[COMP]
         if self.skeleton:
             self.skeleton_args = { 'levels':np.linspace(*self.vel_bnds, 7),
                                     'vmin':self.vel_bnds[0],
@@ -139,13 +139,13 @@ class Viz_velfield(Viz):
 
             self.im_ref_skeleton = plt.contour(self.grid._x/self.farm.af.D,
                                                self.grid._z/self.farm.af.D,
-                                               uu_f3.T,
+                                               uu_mod.T,
                                                self.skeleton_args)
         self.time_txt = plt.suptitle('')
 
         self.fig.subplots_adjust(right=0.85)
         cbar = self.fig.add_axes([0.85, 0.25, 0.025, 0.5])
-        self.fig.colorbar(self.im_f3, cax=cbar, label=r'u(z=90m) [ms$^{-1}$]')
+        self.fig.colorbar(self.im_mod, cax=cbar, label=r'u(z=90m) [ms$^{-1}$]')
 
         if self.n_ax==1:
             plt.subplots_adjust(left=0.1, right=0.8, bottom=0.25, top=0.8)
@@ -235,15 +235,12 @@ class Viz_velfield(Viz):
         if (self.farm.it % self.skip) > 0 or self.farm.t< self.t_start:
             return
 
-        uu_f3 = self.grid.u_compute()[COMP]
-
-        self.im_f3.set_data(np.rot90(uu_f3))
-        self._layout_update(self.plt_wt_f3)
+        uu_mod = self.grid.u_compute()[COMP]
+        self.im_mod.set_data(np.rot90(uu_mod))
+        self._layout_update(self.plt_wt_mod)
 
         if self.data_fid:
-            print(self._get_t_idx_ref())
             uu_ref = self.u_ref[self._get_t_idx_ref(), COMP, :, :]
-
             self.im_ref.set_data(np.rot90(uu_ref[self.ref_map]))
             self._layout_update(self.plt_wt_ref)
 
@@ -252,15 +249,17 @@ class Viz_velfield(Viz):
                 coll.remove()
             self.im_ref_skeleton = plt.contour(self.grid._x/self.farm.af.D,
                                               self.grid._z/self.farm.af.D,
-                                              uu_f3.T,
+                                              uu_mod.T,
                                               self.skeleton_args)
-        if self.mp4_export:
-            self.__savefig__(f'/{SAVE_DIR}/frame{self._frame_id:03d}.png', dpi=200)
-            self._frame_id += 1
+
 
         if self.show:
             plt.draw()
-            plt.pause(0.0001)
+            plt.pause(0.1)
+
+        if self.mp4_export:
+            self.__savefig__(f'/{SAVE_DIR}/frame{self._frame_id:03d}.png', dpi=200)
+            self._frame_id += 1
         # -------------------------------------------------------------------- #
 
     def _data_clean(self, *args, **kwargs):

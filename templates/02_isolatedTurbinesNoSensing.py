@@ -64,7 +64,7 @@ model_args = {
 
 DATA = f'{os.environ["ONWARDS_PATH"]}/templates/data/isolatedTurbines'
 
-with Farm(DATA, 'NREL', snrs_args, est_args, model_args, enable_logger=True) as wf:
+with Farm(DATA, 'NREL', snrs_args, est_args, model_args, enable_logger=False) as wf:
 
     D = wf.af.D
 
@@ -78,7 +78,8 @@ with Farm(DATA, 'NREL', snrs_args, est_args, model_args, enable_logger=True) as 
                 ylim=[[6, 10],[-1, 1], [0,0.2]])
 
     # 2D hub-height velocity slice animation
-    wf.viz_add('velfield', [3, 10], 0, data_fid=f'velocity/plane00_Vel_WF_01.npz',show=False)
+    p_id = f'velocity/plane00_Vel_WF_01.npz'
+    wf.viz_add('velfield', [3, 10], 0, data_fid=p_id, show=True, mp4_export=False)
 
     # Plot position of the wake centerline 3D, 6D and 9D behind the wind
     # turbine hub

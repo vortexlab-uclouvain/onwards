@@ -55,7 +55,7 @@ est_args = {
     # Esimator 0  Retrieves the transverse (z) velocity component, ``w_inc``, and 
     # ----------  the yaw angle, ``yaw``, directly from the Turbine's measurements
     'estimator0': {'type': 'fld_fromdata',
-                   'meas_in': ['uCz_m2D', 'yawA'],
+                   'meas_in':   ['uCz_m2D', 'yawA'],
                    'state_out': ['w_inc', 'yaw']},
 
     # Esimator 1  Estimates the rotor normal (x) velocity component, ``u_inc``, 

@@ -29,7 +29,7 @@ Est_fld_debug.
 snrs_args = {
     'type': 'SensorsDecoy',
     'fs': 1,
-    'time_bnds': [0, 1000]
+    'time_bnds': [0, 500]
 }
 
 # Estimator
