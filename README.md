@@ -20,7 +20,7 @@ OnWaRDS was developed using Python 3.9. The following modules are required:
 * numpy      1.21.2
 * scipy      1.6.1
 
-``templates`` provides a few OnWaRDS configurations examples and will guide you through the different step required to perform a farm simulation. 
+``templates`` provides a few OnWaRDS configurations examples and will guide you through the different steps required to perform a farm simulation. 
 
 ```python:
 cd templates
