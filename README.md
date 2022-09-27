@@ -45,4 +45,4 @@ Acknowledgements
 
 This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation program (grant agreement no. 725627). Simulations were performed using computational resources provided by the Consortium des Équipements de Calcul intensif (CÉCI), funded by the Fonds de la Recherche Scientifique de Belgique (F.R.S.- FNRS) under Grant No. 2.5020.11, and computational resources made available on the Tier-1 supercomputer of the Fédération Wallonie-Bruxelles, infrastructure funded by the Walloon Region under the Grant Agreement No. 1117545.
 
-[Contact Us](mailto:maxime.lejeune@uclouvain.be)
+✉️ [Contact Us](mailto:maxime.lejeune@uclouvain.be)
