@@ -44,14 +44,12 @@ How to cite
 -----------
 If you use OnWaRDS in a scientific publication, please use the following citation:
 ```
-@article{Lejeune22a,
+@article{Lejeune22b,
 	author = {Maxime Lejeune and Maud Moens and Philippe Chatelain},
-	journal = {Journal of Physics: Conference Series},
-	month = {may},
-	number = {2},
-	pages = {022018},
-	title = {Extension and validation of an operational dynamic wake model to yawed configurations},
-	volume = {2265},
+	journal = {Frontiers in Energy Research},
+	month = {jul},
+	title = {A Meandering-Capturing Wake Model Coupled to Rotor-Based Flow-Sensing for Operational Wind Farm Flow Prediction},
+	volume = {10},
 	year = {2022}
 }
 ```
