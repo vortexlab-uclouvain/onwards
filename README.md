@@ -44,7 +44,7 @@ How to cite
 -----------
 If you use OnWaRDS in a scientific publication, please use the following citation:
 ```
-@article{Lejeune22b,
+@article{Lejeune22,
 	author = {Maxime Lejeune and Maud Moens and Philippe Chatelain},
 	journal = {Frontiers in Energy Research},
 	month = {jul},
