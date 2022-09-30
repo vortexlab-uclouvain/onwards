@@ -7,9 +7,9 @@ Welcome to OnWaRDS!
 
 Quick start
 -----------
-``install.sh`` will guide you through the installation process (set up environment variable and compile sources).
+``install.sh`` will guide you through the installation process (set up environment variables and compile sources).
 
-```python:
+```bash:
 git clone git@git.immc.ucl.ac.be:lejeunemax/OnWaRDS.git
 cd OnWaRDS
 source install.sh
@@ -22,8 +22,8 @@ OnWaRDS was developed using Python 3.9. The following modules are required:
 
 ``templates`` provides a few OnWaRDS configurations examples and will guide you through the different steps required to perform a farm simulation. 
 
-```python:
-cd templates
+```bash:
+cd $ONWARDS_PATH/templates
 python 00_sandbox.py
 ```
 
@@ -39,6 +39,25 @@ Publications
 [\[2\]](https://doi.org/10.1088/1742-6596/2265/2/022018) M. Lejeune, M. Moens, and P. Chatelain. *Extension and validation of an operational dynamic wake model to yawed configurations*. Journal of Physics: Conference Series, 2265(2):022018, may 2022.
 
 [\[3\]](https://doi.org/10.1088/1742-6596/1618/6/062055) M. Lejeune, M. Moens, M. Coquelet, N. Coudou, and P. Chatelain. *Data assimilation for the prediction of wake trajectories within wind farms*. Journal of Physics: Conference Series, 1618:062055, sep 2020.
+
+How to cite
+-----------
+If you use OnWaRDS in a scientific publication, please use the following citation:
+```
+@article{Lejeune22a,
+	author = {Maxime Lejeune and Maud Moens and Philippe Chatelain},
+	journal = {Journal of Physics: Conference Series},
+	month = {may},
+	number = {2},
+	pages = {022018},
+	title = {Extension and validation of an operational dynamic wake model to yawed configurations},
+	volume = {2265},
+	year = {2022}
+}
+```
+
+License
+-------
 
 Acknowledgements
 ----------------
