@@ -66,8 +66,7 @@ class Viz_velfield(Viz):
 
         # mp4 export
         self.show = show
-        self.mp4_export = mp4_export
-        if self.mp4_export:
+        if mp4_export:
             if not self.farm.out_dir:
                 raise ValueError(
                     'mp4_export can not be set to True if no output directory is specified in farm.')
@@ -257,12 +256,15 @@ class Viz_velfield(Viz):
             plt.draw()
             plt.pause(0.1)
 
-        if self.mp4_export:
+        if self.mp4_dir:
             self.__savefig__(f'/{SAVE_DIR}/frame{self._frame_id:03d}.png', dpi=200)
             self._frame_id += 1
         # -------------------------------------------------------------------- #
 
     def _data_clean(self, *args, **kwargs):
+        if not self.mp4_dir: 
+            return
+
         if os.system('which ffmpeg > /dev/null 2>&1')==0:
             frame_rate = 10 # [Hz]
             out_name = 'velfield_anim.mp4'
