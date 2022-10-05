@@ -31,6 +31,10 @@ Documentation
 -------------
 Documentation available [here](https://lejeunemax.git-page.immc.ucl.ac.be/OnWaRDS/).
 
+Reference data
+--------------
+Data available [here](https://doi.org/10.14428/DVN/AUVUI6)
+
 Publications
 ------------
 
@@ -56,6 +60,26 @@ If you use OnWaRDS in a scientific publication, please use the following citatio
 
 License
 -------
+
+This program (OnWaRDS) is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program (see COPYING file).  If not, see <https://www.gnu.org/licenses/>.
+
+*************************************************************************
+The documentation for this program is under a creative commons attribution share-alike 4.0 license.  http://creativecommons.org/licenses/by-sa/4.0/
+
+*************************************************************************
+A dataset for testing this program is provided under a Creative Commons attribution-NonCommercial-NoDerivatives 4.0 International License.
+https://creativecommons.org/licenses/by-nc-nd/4.0/
 
 Acknowledgements
 ----------------

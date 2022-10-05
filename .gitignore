@@ -17,5 +17,7 @@ onwards_run_*/
 # doc
 docs/build
 
-# local folder
+# local data
 local
+/templates/data/isolatedTurbines/*
+!/templates/data/isolatedTurbines/README.md

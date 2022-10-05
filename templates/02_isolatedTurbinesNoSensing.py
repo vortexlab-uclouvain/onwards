@@ -43,7 +43,15 @@ Data is compared against the LES data in terms of:
     - Hub height velocity field;
     - Wake centerline position;
     - Rotor Effective Wind Speed;
+
+DATA: The reference data is provided at from https://doi.org/10.14428/DVN/AUVUI6
+      and should be stored under the DATA path.
 """
+
+DATA = f'{os.environ["ONWARDS_PATH"]}/templates/data/isolatedTurbines'
+if not os.path.exists(f'{DATA}/geo.npy' ):
+    raise Exception(f'Reference data not found at {DATA}. Please first download' + 
+                    f'the reference data from https://doi.org/10.14428/DVN/AUVUI6')
 
 # Sensors initialization
 snrs_args = {
@@ -80,7 +88,6 @@ model_args = {
     'tau_r': 16,
 }
 
-DATA = f'{os.environ["ONWARDS_PATH"]}/templates/data/isolatedTurbines'
 
 with Farm(DATA, 'NREL', snrs_args, est_args, model_args, enable_logger=False) as wf:
 
