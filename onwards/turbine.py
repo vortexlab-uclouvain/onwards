@@ -1,3 +1,21 @@
+# Copyright (C) <2022> <Université catholique de Louvain (UCLouvain), Belgique>
+
+# List of the contributors to the development of OnWaRDS: see LICENSE file.
+# Description and complete License: see LICENSE file.
+	
+# This program (OnWaRDS) is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program (see COPYING file).  If not, see <https://www.gnu.org/licenses/>.
+ 
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -25,7 +43,6 @@ class Turbine:
     snrs : Sensors
     estimators : List[estimators.Estimator]
     est_export : estimators.StateExportBuffer
-
 
     def __init__(self, farm: Farm, i_wt: int, snrs_args: dict, est_args:list):
         r""" Inits Turbine
@@ -321,6 +338,7 @@ class Turbine:
             current rotor orientation.
         """        
         theta = np.deg2rad(self.states['yaw'])
+        theta = self.states['yaw']
         tmp = np.array([-1,1]) * self.af.R
         return [ self.x[0] + tmp*np.sin(theta), 
                  self.x[2] + tmp*np.cos(theta) ]
