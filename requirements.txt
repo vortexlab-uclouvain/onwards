@@ -1,0 +1,6 @@
+python 3.9
+
+# Python libraries
+matplotlib 3.4.3   
+numpy      1.21.2
+scipy      1.6.1

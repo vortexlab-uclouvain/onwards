@@ -1,0 +1,23 @@
+# IDE configuration
+.vscode
+
+# macOS
+.DS_Store
+
+# compiled files
+__pycache__
+*.pyc
+*.o
+*.so
+
+# OnWaRDS file
+.runid
+onwards_run_*/
+
+# doc
+docs/build
+
+# local data
+local
+/templates/data/isolatedTurbines/*
+!/templates/data/isolatedTurbines/README.md
