@@ -289,6 +289,8 @@ class Farm:
             from .vizs.rews       import Viz_rews            as Viz
         elif _viz_type == 'estimators':
             from .vizs.estimators import Viz_estimators      as Viz
+        elif _viz_type == 'power':
+            from .vizs.power      import Viz_power           as Viz
         else:
             raise Exception(f'viz_type {viz_type} not recognized.')
 

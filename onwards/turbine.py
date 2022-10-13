@@ -261,6 +261,9 @@ class Turbine:
             elif e_type == 'fld_debug': 
                 from .estimators.fld_debug     import Est_fld_debug     as Estimator
 
+            elif e_type == 'fld_controller': 
+                from .estimators.fld_controller    import Est_fld_controller as Estimator
+
             # User defined Estimator
             # elif e_type == 'fld_myest': 
             #     from .estimators.fld_myest     import Est_fld_myest     as Estimator
