@@ -19,7 +19,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import logging 
+import logging
 lg = logging.getLogger(__name__)
 
 import os
@@ -42,6 +42,49 @@ COMP = 0
 SKELETON_ARGS = {'colors': 'w',
                  'linestyles': 'solid',
                  'linewidths': 0.6}
+
+class Field_bf():
+    def __init__(self, data_path:str, farm: Farm):
+        from ensightReader import EnsightReader
+        from iniReaderv2 import IniReader
+
+        bf_ini = IniReader(f'{data_path}/bigflowSimu.ini')
+        sim_name = bf_ini.iniDict['simName']
+
+        self.t0 = farm.wts[0].snrs.t0
+        self.dt_bf = bf_ini.getValue('time_stepping', 'dt', float)
+
+        case_dict = {
+            'meshFile': f'/geo/mesh_{PLANE_ID}_Vel_{sim_name}.geo',
+            'varType': ['vector'],
+            'elmType': ['node'],
+            'varName': ['Vel'],
+            'varFile': [f'/velocity/{PLANE_ID}_Vel_{sim_name}_000000.out']
+        }
+
+        self.er_wf = EnsightReader(case_dict, rootDir=data_path, it0_override_flag=True)
+        self.x = self.er_wf.getField('Vel', COMP)[1]
+
+        # -------------------------------------------------------------------- #
+
+    def __call__(self, t):
+        it = int((self.t0+t)/self.dt_bf)
+        self.er_wf.dataTimeUpdate(it)
+        return self.er_wf.getField('Vel',COMP)[0].squeeze()
+        # -------------------------------------------------------------------- #
+
+class Field_npz():
+    def __init__(self, data_path:str, farm: Farm):
+        data = np.load(data_path)
+
+        self.x = [data[comp] for comp in ['x', 'y', 'z']]
+        self.uu = data['u']
+        self.t = data['t'] - farm.wts[0].snrs.t0
+        # -------------------------------------------------------------------- #
+
+    def __call__(self, t):
+        return self.uu[np.argmin(np.abs(t-self.t)), COMP, :, :]
+        # -------------------------------------------------------------------- #
 
 class Viz_velfield(Viz):
     farm: Farm
@@ -139,7 +182,7 @@ class Viz_velfield(Viz):
         i_ax = 0
         plt.sca(self.axs[i_ax][0])
         self.im_mod = plt.imshow( self.grid.xx,
-                                 extent=[*[x/af_d for x in self.grid.x_bnds],
+                                  extent=[*[x/af_d for x in self.grid.x_bnds],
                                          *[z/af_d for z in self.grid.z_bnds]], 
                                  **self.im_args)
         self.plt_wt_mod = self._set_layout(plt.gca(), self.im_mod, skip_x=bool(data_fid))
@@ -173,33 +216,31 @@ class Viz_velfield(Viz):
         self.update()
 
         # -------------------------------------------------------------------- #
-    def _get_t_idx_ref(self):
-        return np.argmin(np.abs(self.t_ref-self.farm.wts[0].snrs.t0-self.farm.t))
-        # -------------------------------------------------------------------- #
     
-    def __init_ref__(self, data_fid):
-        data = np.load(f'{self.farm.data_dir}/{data_fid}')
-
-        self.x_ref = [data[comp] for comp in ['x', 'y', 'z']]
-        self.u_ref = data['u']
-        self.t_ref = data['t']
+    def __init_ref__(self, data_fid: str):
+        if data_fid.endswith('.npz'):  
+            self.fld_getter = Field_npz(f'{self.farm.data_dir}/{data_fid}', self.farm)
+        else:
+            self.fld_getter = Field_bf(data_fid, self.farm)
+        
+        x_ref = self.fld_getter.x
 
         # Setting bounds
-        x_idx_bnds = (np.argmin(np.abs(self.grid.x_bnds[0] - self.x_ref[0])),
-                      np.argmin(np.abs(self.grid.x_bnds[1] - self.x_ref[0])))
+        x_idx_bnds = (np.argmin(np.abs(self.grid.x_bnds[0] - x_ref[0])),
+                      np.argmin(np.abs(self.grid.x_bnds[1] - x_ref[0])))
         self.x_ref_idx = np.arange(*x_idx_bnds)
 
-        y_idx_bnds = (np.argmin(np.abs(self.grid.z_bnds[0] - self.x_ref[2])),
-                      np.argmin(np.abs(self.grid.z_bnds[1] - self.x_ref[2])))
+        y_idx_bnds = (np.argmin(np.abs(self.grid.z_bnds[0] - x_ref[2])),
+                      np.argmin(np.abs(self.grid.z_bnds[1] - x_ref[2])))
 
-        if self.grid.x_bnds[0] < self.x_ref[0][0]:
-            self.xlim[0] = self.x_ref[0][0]
-        if self.grid.x_bnds[1] > self.x_ref[0][-1]:
-            self.xlim[1] = self.x_ref[0][-1]
-        if self.grid.z_bnds[0] < self.x_ref[2][0]:
-            self.zlim[0] = self.x_ref[2][0]
-        if self.grid.z_bnds[1] > self.x_ref[2][-1]:
-            self.zlim[1] = self.x_ref[2][-1]
+        if self.grid.x_bnds[0] < x_ref[0][0]:
+            self.xlim[0] = x_ref[0][0]
+        if self.grid.x_bnds[1] > x_ref[0][-1]:
+            self.xlim[1] = x_ref[0][-1]
+        if self.grid.z_bnds[0] < x_ref[2][0]:
+            self.zlim[0] = x_ref[2][0]
+        if self.grid.z_bnds[1] > x_ref[2][-1]:
+            self.zlim[1] = x_ref[2][-1]
 
         # Plotting data
         af_d = self.farm.af.D
@@ -207,11 +248,11 @@ class Viz_velfield(Viz):
         y_vec_idx = np.arange(*y_idx_bnds)
         self.ref_map = tuple(np.meshgrid(self.x_ref_idx, y_vec_idx, indexing='ij'))
 
-        uu_ref = self.u_ref[self._get_t_idx_ref(), COMP, :, :]
+        uu_ref = self.fld_getter(self.farm.t)
         self.im_ref = plt.imshow( np.rot90(uu_ref[self.ref_map]), 
-                                  extent=[*[x/af_d for x in self.xlim],
-                                          *[z/af_d for z in self.zlim]],
-                                  **self.im_args )
+                                extent=[*[x/af_d for x in self.xlim],
+                                        *[z/af_d for z in self.zlim]],
+                                **self.im_args )
 
         self.plt_wt_ref = self._set_layout(plt.gca(), self.im_ref, skip_x=False)
         # -------------------------------------------------------------------- #
@@ -260,7 +301,7 @@ class Viz_velfield(Viz):
         self._layout_update(self.plt_wt_mod)
 
         if self.data_fid:
-            uu_ref = self.u_ref[self._get_t_idx_ref(), COMP, :, :]
+            uu_ref = self.fld_getter(self.farm.t)
             self.im_ref.set_data(np.rot90(uu_ref[self.ref_map]))
             self._layout_update(self.plt_wt_ref)
 
