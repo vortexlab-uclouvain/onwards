@@ -178,7 +178,7 @@ class LagSolver():
             or ``sd_type``.
         """  
 
-        self._set_c_.update(model_args_new)
+        self._set_c_.update(model_args_new, self.set)
         py_comm.reset_LagSolver(self.p)
         # -------------------------------------------------------------------- #
 
