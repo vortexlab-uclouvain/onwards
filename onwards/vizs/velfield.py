@@ -94,7 +94,9 @@ class Viz_velfield(Viz):
             if not os.path.exists(self.mp4_dir):
                 os.makedirs(self.mp4_dir)
             self._frame_id = 0
-
+        else:
+            self.mp4_dir = False
+             
         # wake skeleton overlay
         self.skeleton = skeleton
         if skeleton and not data_fid:
