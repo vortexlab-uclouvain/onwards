@@ -174,7 +174,7 @@ class LagSolver():
         Raises
         ------
         ValueError
-            If one of the following model parameters is updated: ``n_fm``,``n_wm`` 
+            If one of the following model parameters is updated: ``n_fm``, ``n_wm`` 
             or ``sd_type``.
         """  
 
@@ -306,7 +306,7 @@ class LagSolver():
 
         See also
         --------
-        :meth:`get<.LagSolver.get`
+        :meth:`get<.LagSolver.get>`
 
         """        
 
