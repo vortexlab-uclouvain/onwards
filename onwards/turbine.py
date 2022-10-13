@@ -258,6 +258,9 @@ class Turbine:
             elif e_type == 'ufswfs_waked': 
                 from .estimators.ufswfs_waked  import Est_ufswfs_waked  as Estimator
 
+            elif e_type == 'yaw_fromdata': 
+                from .estimators.yaw_fromdata  import Est_yaw_fromdata  as Estimator
+
             elif e_type == 'fld_debug': 
                 from .estimators.fld_debug     import Est_fld_debug     as Estimator
 
@@ -337,7 +340,7 @@ class Turbine:
             The position (x, z) of the tip of the turbines blades given the 
             current rotor orientation.
         """        
-        theta = np.deg2rad(self.states['yaw'])
+        # theta = np.deg2rad(self.states['yaw'])
         theta = self.states['yaw']
         tmp = np.array([-1,1]) * self.af.R
         return [ self.x[0] + tmp*np.sin(theta), 
