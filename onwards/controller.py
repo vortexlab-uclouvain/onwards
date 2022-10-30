@@ -243,35 +243,57 @@ class Controller():
         return np.rad2deg(pitch_new)
 
 if __name__=='__main__':
-    td = TurbineDynamics(1,0,-1,0)
+    td = TurbineDynamics(4,0,-1,0)
 
-    tt= np.linspace(0,200,201)
+    fs = 10
+    dt = 1/fs*10
+    n_t = 100
     # tt= np.linspace(0,10,11)
 
-    qall = np.zeros_like(tt)
-    omall = np.zeros_like(tt)
+    qall = np.zeros(n_t)
+    omall = np.zeros(n_t)
+    regionall = np.zeros(n_t)
 
     uinf = 3
 
-    uu = range(3,20)
+    uu = np.arange(3,25,0.1)
     quu = np.zeros_like(uu)
     omuu = np.zeros_like(uu)
+    regionuu = np.zeros_like(uu)
 
     t = 0
     for i_u, u in enumerate(uu):
-        for i_t, _ in enumerate(tt):
-            t += 1
+        print(u)
+        for i_t in range(n_t):
+            t += dt
             td.update(t,u)
-            qall[i_t] = td.drivetrain.Q_aero
+            qall[i_t] = td.drivetrain.Q_g * td.drivetrain.omega_g
             omall[i_t] = td.drivetrain.omega_g
+            omall[i_t] = td.drivetrain.omega_g
+            regionall[i_t] = td.controller.region
+        dt = 1/fs
         quu[i_u] = qall[-1] 
         omuu[i_u] = omall[-1] 
+        regionuu[i_u] = regionall[-1]
+
+    export_dir = '/Users/lejeunemax/Library/CloudStorage/OneDrive-Personal/PhD/Documents/Thesis/chap1/img/controller.npz'
+    np.savez(export_dir, power=quu, vel=uu, reg=regionuu)
+
     import matplotlib.pyplot as plt
-    plt.subplot(1,2,1)
+    plt.subplot(1,3,1)
     plt.plot(uu,quu)
 
-    plt.subplot(1,2,2)
+    for i in np.arange(1,6):
+        idx=np.argwhere(regionuu==i)
+        if len(idx):
+           u_reg = uu[int(idx[-1])]
+           plt.axvline(u_reg)
+           plt.text(u_reg, 0+.5e6, str(i/2+.5))
+
+    plt.subplot(1,3,2)
     plt.plot(uu,omuu)
 
+    plt.subplot(1,3,3)
+    plt.plot(uu,regionuu)
 
     plt.draw(); plt.pause(0.1); input("Press any key to exit"); plt.close() 
