@@ -51,10 +51,10 @@ snrs_args = {
 }
 
 # Estimator
-# User defined Turbine's state (refer to :class:`.Est_fld_debug`)
+# User defined Turbine's state (cfr: onwards_estimator_00_sandbox)
 est_args = {
     'n_substeps': 1,
-    'estimator0': {'type': 'fld_debug'},
+    'estimator0': {'type': '00_sandbox'},
     'ini_states': {'ct': 0}
 }
 

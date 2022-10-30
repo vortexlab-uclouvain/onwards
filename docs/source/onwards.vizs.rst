@@ -21,6 +21,12 @@ Viz_centerline
    :show-inheritance:
    :exclude-members: plot, reset, update, farm, grid
 
+.. automodule:: onwards.vizs.centerline_xloc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :exclude-members: plot, reset, update, farm, grid
+
 Viz_estimators
 --------------
 

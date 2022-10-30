@@ -163,16 +163,18 @@ class c_Set(ctypes.Structure):
                 raise Exception(f'Model Initialization failed: no value was provided for {f}.')
         # -------------------------------------------------------------------- #
 
-    def update(self, model_args_new):
+    def update(self, model_args_new, model_args_old):
         for f in ['n_fm', 'n_wm', 'sd_type']:
             if f in model_args_new:
-                raise ValueError(f'{f} does not support value reallocation.')
+                if model_args_new[f]!=model_args_old[f]:
+                    raise ValueError(f'{f} does not support value reallocation.')
 
         for f in model_args_new:
-            if self._fields_types_map_[f]==c_double: 
-                setattr( self, f, float( model_args_new[f] ) )
-            if self._fields_types_map_[f]==c_int   :
-                setattr( self, f,   int( model_args_new[f] ) )
+            if f in self._fields_types_map_:
+                if self._fields_types_map_[f]==c_double: 
+                    setattr( self, f, float( model_args_new[f] ) )
+                if self._fields_types_map_[f]==c_int   :
+                    setattr( self, f,   int( model_args_new[f] ) )
         
             lg.info(f'updating field {f} = {model_args_new[f]}')
         # -------------------------------------------------------------------- #

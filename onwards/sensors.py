@@ -30,22 +30,24 @@ if TYPE_CHECKING:
 C2TPI = 2*np.pi
 
 class Sensors():
-    def __init__(self, data_path: str, fs: float = None):
+    def __init__(self,  i_bf: int, data_path: str, snrs_args: dict):
         """ Prototype Sensors class.
 
         Parameters
         ----------
-        data_path: str
-            Path to the data file.
-        fs: float, optional
-            Sampling frequency in [Hz]. If None (by default), the original time 
-            sampling is preserved.
+        i_bf : int
+            Index of the wind turbine
+        farm_data_dir : str
+            Path to the data directory path.
+        snrs_args : dict
+            Dictionary containing the parameters used for the turbines Sensors 
+            initialization (refer to :class:`.Sensors`).
 
         See also
         --------
         :meth:`Turbine.__init_sensors__`
         """
-        self.fs = fs
+        self.fs = 0
         raise NotImplementedError
         # -------------------------------------------------------------------- #
 
@@ -214,7 +216,7 @@ class SensorsPy(Sensors):
             _y %= C2TPI
         
         lg.info(  f'{self.n_time} data points available from {self.time[0]:.1f} '
-                + f'to {self.time[-1]:.1f}s (sampling frequency: {fs:.2f} Hz and '
+                + f'to {self.time[-1]:.1f}s (sampling frequency: {self.fs:.2f} Hz and '
                 + f'offset: {self.t0:.1f} s)' )
         # -------------------------------------------------------------------- #
 
@@ -321,7 +323,6 @@ class SensorsDecoy(Sensors):
         else:
             raise StopIteration()
         # -------------------------------------------------------------------- #
-    
 
     def get_buffer_data(self, fld: str, i_b:int=None) -> float:
         if fld == 'time':

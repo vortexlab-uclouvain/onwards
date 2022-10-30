@@ -18,15 +18,6 @@ Est\_ct\_fromthrust
    :show-inheritance:
    :exclude-members: update
 
-Est\_fld\_debug
----------------
-
-.. automodule:: onwards.estimators.fld_debug
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :exclude-members: update
-
 Est\_fld\_fromdata
 ------------------
 

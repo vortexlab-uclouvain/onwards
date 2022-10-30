@@ -174,11 +174,11 @@ class LagSolver():
         Raises
         ------
         ValueError
-            If one of the following model parameters is updated: ``n_fm``,``n_wm`` 
+            If one of the following model parameters is updated: ``n_fm``, ``n_wm`` 
             or ``sd_type``.
         """  
 
-        self._set_c_.update(model_args_new)
+        self._set_c_.update(model_args_new, self.set)
         py_comm.reset_LagSolver(self.p)
         # -------------------------------------------------------------------- #
 
@@ -306,7 +306,7 @@ class LagSolver():
 
         See also
         --------
-        :meth:`get<.LagSolver.get`
+        :meth:`get<.LagSolver.get>`
 
         """        
 
