@@ -24,11 +24,11 @@ import numpy as np
 
 lg = logging.getLogger(__name__)
 
-from .estimator import Estimator
+from onwards import Estimator
 if TYPE_CHECKING:
-    from turbine import Turbine
+    from onwards import Turbine
 
-class Est_fld_debug(Estimator):
+class Estimator_00_sandbox(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
         """
         Set the turbine state to user defined values.
@@ -41,7 +41,7 @@ class Est_fld_debug(Estimator):
         
         """
         meas   = []
-        from ..turbine import MINIMAL_STATES
+        from onwards import MINIMAL_STATES
         states = MINIMAL_STATES
         req_states = [] 
         super().__init__(wt, meas, states, req_states, avail_states)

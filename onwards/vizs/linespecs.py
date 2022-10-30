@@ -28,4 +28,3 @@ MODscat = {'color':MYBLUE, 'label': 'Flow Model'}
 import matplotlib.pyplot as plt
 CMAP =  plt.get_cmap('viridis')
 CMAP_VEL =  plt.get_cmap('seismic')
-CMAP_VEL =  plt.get_cmap('viridis')

@@ -17,22 +17,21 @@
 # along with this program (see COPYING file).  If not, see <https://www.gnu.org/licenses/>.
  
 from __future__ import annotations
-from posixpath import lexists
 from typing import TYPE_CHECKING
 
 import logging
 
-from ..turbine import MINIMAL_STATES 
+from onwards.turbine import MINIMAL_STATES 
 lg = logging.getLogger(__name__)
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .viz import Viz
-from . import linespecs
+from onwards.vizs.viz import Viz
+from onwards.vizs import linespecs
 if TYPE_CHECKING:
     from typing import List
-    from ..farm import Farm
+    from onwards.farm import Farm
 
 class Viz_power(Viz):
     viz_type = 'power'
@@ -72,7 +71,7 @@ class Viz_power(Viz):
         # -------------------------------------------------------------------- #
 
     def _export(self):
-        out = {'time':self.time,'label':self.l_map,'data':self.data}
+        out = {'time':self.time,'label':'power','data':self.data}
         self.__savenpy__(f'estimator_data.npy', out, allow_pickle=True)
         # -------------------------------------------------------------------- #
 

@@ -43,6 +43,10 @@ class Viz():
         ----------
         farm : Farm
             Parent Farm object.
+
+        See also
+        ----
+        :meth:`.Farm.viz_add`.
         """        
         self.farm = farm
         self.data = {}

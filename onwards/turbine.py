@@ -126,13 +126,10 @@ class Turbine:
 
         Note
         ----
-
-        The user can introduce its own Sensors following :class:`.Sensors` 
-        class specifications.
-
-            >>> if snrs_type=='MySensors':
-            >>>    from sensors import MySensors
-            >>>    self.snrs = MySensors()
+        The user can implement his own Sensors objects following the :class:`.Sensors`
+        prototype class. These Sensors subclass should be named ``Sensors_myname`` and 
+        saved to a file named ``onwards_sensors_myname.py`` available in the python 
+        path.
 
         See also
         --------
@@ -151,13 +148,15 @@ class Turbine:
         elif snrs_args['type']=='SensorsDecoy':
             from .sensors import SensorsDecoy
             self.snrs = SensorsDecoy(**snrs_args)
+            
+        else:       # tries to load user-defined estimator 
+            try:    # (should be available in python path)
+                module_name = f'onwards_sensors_{snrs_args["type"]}'
+                Sensors = getattr(__import__(module_name), f'Sensors_{snrs_args["type"]}')
+                self.snrs = Sensors(self.i_bf, self.farm.data_dir, **snrs_args)
 
-        # elif snrs_type=='MySensors': # custom sensors class example
-        #     from sensors import MySensors
-        #     self.snrs = MySensors()
-        
-        else:
-            raise ValueError('Sensors type not recognized.')
+            except (ModuleNotFoundError, AttributeError) as er:
+                raise Exception(f'Sensors type {snrs_args["type"]} not recognized: {er}')
 
         self.fs   = self.snrs.fs
         self.t    = self.snrs.get_buffer_data('time')
@@ -218,6 +217,13 @@ class Turbine:
         eg: ct estimations are likely to depend on the estimation of the Rotor 
         Effective Wind Speed.   
 
+        Note
+        ----
+        The user can implement his own Estimator objects following the :class:`.Estimator`
+        prototype class. These Estimator subclass should be named ``Estimator_myname`` and 
+        saved to a file named ``onwards_estimator_myname.py`` available in the python 
+        path.
+
         See also
         --------
         :class:`.Estimator`, 
@@ -246,33 +252,16 @@ class Turbine:
             e_type = est_args[key]['type']
             lg.debug(f'Initializing {key} of type {e_type}.')
 
-            if   e_type == 'fld_fromdata':  
-                from .estimators.fld_fromdata  import Est_fld_fromdata  as Estimator
-
-            elif e_type == 'uincti_kfbem': 
-                from .estimators.uincti_kfbem  import Est_uincti_kfbem  as Estimator
-
-            elif e_type == 'ct_fromthrust': 
-                from .estimators.ct_fromthrust import Est_ct_fromthrust as Estimator
-
-            elif e_type == 'ufswfs_waked': 
-                from .estimators.ufswfs_waked  import Est_ufswfs_waked  as Estimator
-
-            elif e_type == 'yaw_fromdata': 
-                from .estimators.yaw_fromdata  import Est_yaw_fromdata  as Estimator
-
-            elif e_type == 'fld_debug': 
-                from .estimators.fld_debug     import Est_fld_debug     as Estimator
-
-            elif e_type == 'fld_controller': 
-                from .estimators.fld_controller    import Est_fld_controller as Estimator
-
-            # User defined Estimator
-            # elif e_type == 'fld_myest': 
-            #     from .estimators.fld_myest     import Est_fld_myest     as Estimator
-            
-            else:
-                raise ValueError(f'Estimator type `{e_type}` not recognized.')
+            try: # try to load build-in estimator 
+                module_name = f'onwards.estimators.{e_type}'
+                Estimator = getattr( __import__(module_name, fromlist=['']),
+                                     f'Est_{e_type}')
+            except ModuleNotFoundError: # tries to load user-defined estimator 
+                try:                    # (should be available in python path)
+                    module_name = f'onwards_estimator_{e_type}'
+                    Estimator = getattr(__import__(module_name), f'Estimator_{e_type}')
+                except (ModuleNotFoundError, AttributeError) as er:
+                    raise Exception(f'Estimator type {e_type} not recognized: {er}')
             
             est_args[key] = LoggingDict(est_args[key])
             self.estimators.append(Estimator(self, avail_states, est_args[key]))

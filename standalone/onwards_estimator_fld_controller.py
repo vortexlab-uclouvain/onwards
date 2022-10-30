@@ -5,17 +5,17 @@ import logging
 import numpy as np
 
 lg = logging.getLogger(__name__)
-from onwards.controller import TurbineDynamics 
-from .estimator import Estimator
+from standalone.controller import TurbineDynamics 
+from onwards.estimators.estimator import Estimator
 if TYPE_CHECKING:
-    from turbine import Turbine
+    from onwards.turbine import Turbine
 
 RHO = 1.225
 
-class Est_fld_controller(Estimator):
+class Estimator_fld_controller(Estimator):
     def __init__(self, wt: Turbine, avail_states: list, est_args: dict):
         meas   = []
-        from ..turbine import MINIMAL_STATES
+        from onwards.turbine import MINIMAL_STATES
         states = MINIMAL_STATES
         req_states = [] 
         super().__init__(wt, meas, states, req_states, avail_states)

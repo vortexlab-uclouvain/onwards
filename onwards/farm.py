@@ -270,6 +270,13 @@ class Farm:
         Exception
             If viz_type is not recognized.
 
+        Note
+        ----
+        The user can implement his own Viz objects following the :class:`.Viz`
+        prototype class. These Viz subclass should be named ``Viz_myname`` and 
+        saved to a file named ``onwards_viz_myname.py`` available in the python 
+        path. 
+
         See also
         --------
         :class:`.Viz`,
@@ -277,22 +284,19 @@ class Farm:
 
         """        
         _viz_type = viz_type.lower()
-        if   _viz_type == 'particles':
-            from .vizs.particles  import Viz_particles       as Viz
-        elif _viz_type == 'velfield':
-            from .vizs.velfield   import Viz_velfield        as Viz
-        elif _viz_type == 'centerline':
-            from .vizs.centerline import Viz_centerline      as Viz
-        elif _viz_type == 'centerline_xloc':
-            from .vizs.centerline import Viz_centerline_xloc as Viz
-        elif _viz_type == 'rews':
-            from .vizs.rews       import Viz_rews            as Viz
-        elif _viz_type == 'estimators':
-            from .vizs.estimators import Viz_estimators      as Viz
-        elif _viz_type == 'power':
-            from .vizs.power      import Viz_power           as Viz
-        else:
-            raise Exception(f'viz_type {viz_type} not recognized.')
+
+        try: # try to load build-in Viz 
+            module_name = f'onwards.vizs.{_viz_type}'
+            Viz = getattr( __import__(module_name, fromlist=['']),
+                                    f'Viz_{_viz_type}')
+            
+        except ModuleNotFoundError: # tries to load user-defined Viz 
+            try:                    # (should be available in python path)
+                module_name = f'onwards_viz_{_viz_type}'
+                Viz = getattr(__import__(module_name), f'Viz_{_viz_type}')
+
+            except (ModuleNotFoundError, AttributeError) as er:
+                raise Exception(f'Viz type {_viz_type} not recognized: {er}')
 
         self.viz.append(Viz(self, *args, **kwargs))
         # -------------------------------------------------------------------- #
