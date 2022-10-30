@@ -48,4 +48,4 @@ class Est_yaw_fromdata(Estimator):
         self.probe = wt.snrs.get_buffer_data
 
     def update(self):
-        self.wt.states['yaw'] = np.deg2rad(0)#elf.probe('yawA'))
+        self.wt.states['yaw'] = np.deg2rad(self.probe('yawA'))
