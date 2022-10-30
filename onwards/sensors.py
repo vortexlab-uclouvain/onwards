@@ -214,7 +214,7 @@ class SensorsPy(Sensors):
             _y %= C2TPI
         
         lg.info(  f'{self.n_time} data points available from {self.time[0]:.1f} '
-                + f'to {self.time[-1]:.1f}s (sampling frequency: {fs:.2f} Hz and '
+                + f'to {self.time[-1]:.1f}s (sampling frequency: {self.fs:.2f} Hz and '
                 + f'offset: {self.t0:.1f} s)' )
         # -------------------------------------------------------------------- #
 
