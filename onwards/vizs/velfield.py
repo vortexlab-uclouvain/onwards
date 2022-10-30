@@ -203,7 +203,7 @@ class Viz_velfield(Viz):
             self.im_ref_skeleton = plt.contour(self.grid._x/self.farm.af.D,
                                                self.grid._z/self.farm.af.D,
                                                uu_mod.T,
-                                               self.skeleton_args)
+                                               **self.skeleton_args)
         self.time_txt = plt.suptitle('')
 
         self.fig.subplots_adjust(right=0.85)
@@ -306,12 +306,13 @@ class Viz_velfield(Viz):
             self._layout_update(self.plt_wt_ref)
 
         if self.skeleton:
+            plt.sca(self.im_ref.axes)
             for coll in self.im_ref_skeleton.collections:
                 coll.remove()
             self.im_ref_skeleton = plt.contour(self.grid._x/self.farm.af.D,
                                               self.grid._z/self.farm.af.D,
                                               uu_mod.T,
-                                              self.skeleton_args)
+                                              **self.skeleton_args)
 
 
         if self.show:

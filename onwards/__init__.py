@@ -16,7 +16,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program (see COPYING file).  If not, see <https://www.gnu.org/licenses/>.
  
-from .farm    import Farm
-from .turbine import Turbine, MINIMAL_STATES
-from .airfoil import Airfoil
-from .sensors import Sensors
+from .farm       import Farm
+from .turbine    import Turbine, MINIMAL_STATES
+from .airfoil    import Airfoil
+from .sensors    import Sensors
+from .estimators import Estimator
+from .vizs       import Viz

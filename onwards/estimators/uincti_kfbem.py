@@ -131,8 +131,8 @@ class Est_uincti_kfbem(Estimator):
             def feed_bem(t, V0):
                 return ( V0, 
                          self.wt.snrs.get_buffer_data('rotSpeed') * SPD2OMEG, 
-                         self.wt.snrs.get_buffer_data('pitchA')   ,
-                         self.wt.snrs.get_buffer_data('yawA')      )
+                         self.wt.snrs.get_buffer_data('pitchA')   * CPIO180 ,
+                         self.wt.snrs.get_buffer_data('yawA')     * CPIO180 )
 
             def f(x, argf): return x[:]
             def h(x, argh): return bem_solver.QInterpolate( feed_bem(argh, x) )
