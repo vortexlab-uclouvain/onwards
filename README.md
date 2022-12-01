@@ -10,7 +10,7 @@ Quick start
 ``install.sh`` will guide you through the installation process (set up environment variables and compile sources).
 
 ```bash:
-git clone git@git.immc.ucl.ac.be:lejeunemax/OnWaRDS.git
+git clone git@github.com:vortexlab-uclouvain/onwards.git
 cd OnWaRDS
 source install.sh
 ```
