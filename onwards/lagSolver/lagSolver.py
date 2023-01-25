@@ -435,20 +435,23 @@ class LagSolver():
         return py_comm.rews_compute(self.p, x.p, r_rotor, comp)
         # -------------------------------------------------------------------- #
 
-    def get_bounds(self, model: str, i_wt: int, i_sigma: int = 0) -> List[float]:
-        """_summary_
+    def get_bounds(self, model: str, i_wt: int, i_sigma: int = 0) -> List[List[float]]:
+        """ Returns the bounds of the subdomain 
 
         Parameters
         ----------
         model : str
-            Sub-model from which data should be extracted ``W`` for wake or ``F`` 
-            for ambient flow field.
-        i_wt : float
-            Fictive rotor diameter in [m].
+            Sub-model from which the bounds of the subdomain are extracted ``W`` 
+            for wake or ``F`` for ambient flow field.
+        i_wt : int, optional
+            Index of the Turbine.
+        i_sigma : int
+            Index of the subdomain (0 -> sigma_f_* and 1 -> sigma_r_*), by default 0.
+
         Returns
         -------
-        float
-            _description_
+        List[List[float]]
+            List of the coordinates of the vertices of the subdomain. 
 
         Raises
         ------
