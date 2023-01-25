@@ -73,41 +73,43 @@ class LagSolver():
                 model updates, by default 1.
             :n_fm:       *(int  , optional)* - 
                 Maximum number of ambient flow particles used for each turbine, 
-                by default 100  
+                by default 60  
             :n_shed_fm:  *(int  , optional)* - 
                 Number of Lagrangian flow model timesteps between the shedding 
-                of two successive ambient flow particles by default 1    
+                of two successive ambient flow particles by default 2    
             :c0:         *(float, optional)* - 
-                Convective ambient particles tuning constant , by default 0.73 
+                Convective ambient particles tuning constant , by default 0.30 
             :n_wm:       *(int  , optional)* - 
                 Maximum number of wake particles used for each turbine, by 
-                default 80.   
+                default 60.   
             :n_shed_wm:  *(int  , optional)* - 
                 Number of Lagrangian flow model timesteps between the shedding 
                 of two successive wake particles, by default 2.    
-            :cw:         *(float, optional)* - 
-                Convective wake particles tuning constant, by default 0.54 
+            :cw_xi:      *(float, optional)* - 
+                Convective wake particles tuning constant, by default 0.50 
+            :cw_r:       *(float, optional)* - 
+                Convective wake particles tuning constant, by default 0.30 
             :sigma_xi_f: *(float, optional)* - 
-                Streamwise ambient filtering constant, by default 4.0 
+                Streamwise ambient filtering constant, by default 10.0 
             :sigma_r_f:  *(float, optional)* - 
-                Spanwise/transverse ambient filtering constant, by default 1.0 
+                Spanwise/transverse ambient filtering constant, by default 5.0 
             :sigma_t_f:  *(float, optional)* - 
                 Streamwise ambient filtering constant, by default 2.0 
             :sigma_xi_r: *(float, optional)* - 
-                Streamwise ambient filtering constant, by default 0.5 
+                Streamwise ambient filtering constant, by default 1.0 
             :sigma_r_r:  *(float, optional)* - 
-                Spanwise/transverse ambient filtering constant, by default 1.0 
+                Spanwise/transverse ambient filtering constant, by default 0.5 
             :sigma_t_r:  *(float, optional)* - 
                 Streamwise ambient filtering constant, by default 2.0 
             :tau_r:      *(float, optional)* - 
-                Rotor time filtering constant in [s], by default 16 
+                Rotor time filtering constant in [s], by default 32 
             :sd_type:    *(float, optional)* -
                 Type of speed deficit used ( 0 : Gaussian speed deficit [1]_ 
                 / only option currently available), by default 0     
             :ak:         *(float, optional)* -
-                Wake expansion tuning constant (TI scaling), by default 0.021 
+                Wake expansion tuning constant (TI scaling), by default 0.018 
             :bk:         *(float, optional)* -
-                Wake expansion tuning constant (TI scaling), by default 0.039 
+                Wake expansion tuning constant (TI scaling), by default 0.060 
             :ceps:       *(float, optional)* -
                 Initial wake width tuning constant, by default 0.2
 
@@ -131,27 +133,28 @@ class LagSolver():
 
         self.set['dt'] = float(self.farm.dt * self.set.setdefault( 'n_substeps', 1 ))
 
-        self.set.setdefault( 'n_fm',      100  )
-        self.set.setdefault( 'n_shed_fm', 1    )
-        self.set.setdefault( 'c0',        0.73 )
+        self.set.setdefault( 'n_fm',      60  )
+        self.set.setdefault( 'n_shed_fm', 2   )
+        self.set.setdefault( 'c0',        0.3 )
 
-        self.set.setdefault( 'n_wm',      80   )
-        self.set.setdefault( 'n_shed_wm', 2    )
-        self.set.setdefault( 'cw',        0.54 )
+        self.set.setdefault( 'n_wm',      60  )
+        self.set.setdefault( 'n_shed_wm', 2   )
+        self.set.setdefault( 'cw_xi',     0.5 )
+        self.set.setdefault( 'cw_r',      0.3 )
     
-        self.set.setdefault( 'sigma_xi_f', 4.0 )
-        self.set.setdefault( 'sigma_r_f',  1.0 )
-        self.set.setdefault( 'sigma_t_f',  2.0 )  
+        self.set.setdefault( 'sigma_xi_f', 10 )
+        self.set.setdefault( 'sigma_r_f',  5  )
+        self.set.setdefault( 'sigma_t_f',  2  )  
 
-        self.set.setdefault( 'sigma_xi_r', 0.5 )
-        self.set.setdefault( 'sigma_r_r',  1.0 )
-        self.set.setdefault( 'sigma_t_r',  2.0 )
+        self.set.setdefault( 'sigma_xi_r', 1 )
+        self.set.setdefault( 'sigma_r_r',  0.5  )
+        self.set.setdefault( 'sigma_t_r',  2 )
 
-        self.set.setdefault( 'tau_r',  16 )
+        self.set.setdefault( 'tau_r',  32 )
 
         self.set.setdefault( 'sd_type', 0     )
-        self.set.setdefault( 'ak',      0.021 )
-        self.set.setdefault( 'bk',      0.039 )
+        self.set.setdefault( 'ak',      0.018 )
+        self.set.setdefault( 'bk',      0.06 )
         self.set.setdefault( 'ceps',    0.2   )
 
         self._set_c_ = py_comm.c_Set(self.set)  
@@ -408,7 +411,7 @@ class LagSolver():
         return du_vec.x
         # -------------------------------------------------------------------- #
 
-    def rews_compute(self, x_rotor:List[float], r_rotor:float) -> float:
+    def rews_compute(self, x_rotor: List[float], r_rotor: float, comp: int = 0) -> float:
         """ Computes the Rotor Effective Wind Speed at ``x_rotor`` over a rotor of 
         diameter, ``r_rotor and`` oriented along x.
 
@@ -417,7 +420,9 @@ class LagSolver():
         x_rotor : List[float]
             Fictive rotor center location ``[x,y,z]`` in [m].
         r_rotor : float
-             Fictive rotor diameter in [m].
+            Fictive rotor diameter in [m].
+        comp : int
+            Flow component to be evaluated (``0``: x or ``1``: z), by default None.
 
         Returns
         -------
@@ -427,5 +432,33 @@ class LagSolver():
         """
         x_cast = np.array([x_rotor[0],x_rotor[1],x_rotor[2]])
         x = py_comm.Vec(x_cast)
-        return py_comm.rews_compute(self.p, x.p, r_rotor)
+        return py_comm.rews_compute(self.p, x.p, r_rotor, comp)
+        # -------------------------------------------------------------------- #
+
+    def get_bounds(self, model: str, i_wt: int, i_sigma: int = 0) -> List[float]:
+        """_summary_
+
+        Parameters
+        ----------
+        model : str
+            Sub-model from which data should be extracted ``W`` for wake or ``F`` 
+            for ambient flow field.
+        i_wt : float
+            Fictive rotor diameter in [m].
+        Returns
+        -------
+        float
+            _description_
+
+        Raises
+        ------
+        ValueError
+            If model is not ``W`` or ``F``.
+        """
+        if   model == 'F':
+            return [self.data_p['F'][i_wt].contents.bounds[i_sigma][i][0:2] for i in range(4)]
+        elif model == 'W':
+            return [self.data_p['W'][i_wt].contents.bounds[i][0:2] for i in range(4)]
+        else:
+            raise ValueError(f'Inconsistent model type ({model}).')
         # -------------------------------------------------------------------- #
