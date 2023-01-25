@@ -162,6 +162,7 @@ class Viz_centerline_xloc(Viz_centerline):
                                   horizontalalignment='right',
                                   verticalalignment='top',
                                   transform = ax.transAxes )
+                        plt.grid()
 
                     ax_last = ax
                 else:
