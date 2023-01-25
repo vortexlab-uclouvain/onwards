@@ -45,7 +45,7 @@ class Estimator_fld_controller(Estimator):
         self.wt.states['ct'] = self.turbine_dynamics.drivetrain.T_aero / \
             (self.wt.states['u_fs']**2 * self.ct_fac)
 
-        self.wt.states['yaw'] = (np.arctan(self.wt.t-150)*2/np.pi + 1)/2. * np.deg2rad(20)
+        self.wt.states['psi'] = (np.arctan(self.wt.t-150)*2/np.pi + 1)/2. * np.deg2rad(20)
 
         # print(f'{self.wt.states["ct"]=} and {self.wt.states["yaw"]=}')
         # -------------------------------------------------------------------- #
