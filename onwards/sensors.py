@@ -136,10 +136,6 @@ class SensorsPy(Sensors):
         ------
         KeyError
             If the data field/measurement requested is not available.
-        ValueError
-            If the sensors time bounds selected fall outside the available range.
-        Exception
-            If reference LES data could not be cast to the correct format.
 
         References
         ----------
@@ -174,16 +170,43 @@ class SensorsPy(Sensors):
             lg.debug( 'Importing field %s', fld)
             self.data[fld] = data['data'][fld]
 
+
         # Resample data
+        if fs:  self.interp(fs=fs, time_bnds=time_bnds)
+
+        lg.info(  f'{self.n_time} data points available from {self.time[0]:.1f} '
+                + f'to {self.time[-1]:.1f}s (sampling frequency: {self.fs:.2f} Hz and '
+                + f'offset: {self.t0:.1f} s)' )
+        # -------------------------------------------------------------------- #
+
+    def interp(self, fs: float = None, time_bnds: List[float] = None):
+        """ Reinterpolate the data within the specified bounds with the specified frequency.
+
+        Parameters
+        ----------
+        fs : float, optional
+            Sampling frequency in [Hz]. If None (by default), the original time 
+            sampling is preserved.
+        time_bnds : list[float], optional
+            Data range to be extracted: ``time_bnds[0]`` is the simulation start time 
+            and ``time_bnds[-1]`` is the end time, by default None.
+
+        Raises
+        ------
+        ValueError
+            If the sensors time bounds selected fall outside the available range.
+        Exception
+            If reference LES data could not be cast to the correct format.
+        """        
         if fs or time_bnds:
-            lg.debug( 'Resampling field %s', fld)
             time_bnds   = time_bnds or [self.time[0], self.time[-1]]
             time_interp = np.arange(*time_bnds, 1./fs)
 
             if time_bnds[0]<self.time[0] or self.time[-1]<time_bnds[-1]:
                 raise ValueError('Sensors time bounds selected outside available range.')
 
-            for fld in field_names:
+            for fld in self.data:
+                lg.debug( 'Resampling field %s', fld)
                 if len(self.data[fld])==self.n_time:
                     self.data[fld] = np.interp(time_interp, self.time, self.data[fld])
 
@@ -202,23 +225,19 @@ class SensorsPy(Sensors):
         self._buffer_it = 0
 
         # Fix signal corruption due to interpolation
-        for i_b in range(self.n_b):
-            _x = self.time
-            _y = self.data['theta'][i_b]
-            rot_dir = np.sign(_y[1]-_y[0])
-            for i_t in range(2,self.n_time-2):
-                if rot_dir*_y[i_t-1]>rot_dir*_y[i_t]>rot_dir*_y[i_t+1]:
-                    _dydx   = .5 * ( (_y[i_t-1] - _y[i_t-2]) / (_x[i_t-1] - _x[i_t-2])
-                                + (_y[i_t+2] - _y[i_t+1]) / (_x[i_t+2] - _x[i_t+1]) )
+        if 'theta' in self.data:
+            for i_b in range(self.n_b):
+                _x = self.time
+                _y = self.data['theta'][i_b]
+                rot_dir = np.sign(_y[1]-_y[0])
+                for i_t in range(2,self.n_time-2):
+                    if rot_dir*_y[i_t-1]>rot_dir*_y[i_t]>rot_dir*_y[i_t+1]:
+                        _dydx   = .5 * ( (_y[i_t-1] - _y[i_t-2]) / (_x[i_t-1] - _x[i_t-2])
+                                    + (_y[i_t+2] - _y[i_t+1]) / (_x[i_t+2] - _x[i_t+1]) )
 
-                    _y[i_t] = (.5 * ( (( _y[i_t-1] ) + _dydx * (_x[i_t] - _x[i_t-1]))%C2TPI
-                                    + (( _y[i_t+1] ) - _dydx * (_x[i_t+1] - _x[i_t]))%C2TPI ))
-            _y %= C2TPI
-        
-        lg.info(  f'{self.n_time} data points available from {self.time[0]:.1f} '
-                + f'to {self.time[-1]:.1f}s (sampling frequency: {self.fs:.2f} Hz and '
-                + f'offset: {self.t0:.1f} s)' )
-        # -------------------------------------------------------------------- #
+                        _y[i_t] = (.5 * ( (( _y[i_t-1] ) + _dydx * (_x[i_t] - _x[i_t-1]))%C2TPI
+                                        + (( _y[i_t+1] ) - _dydx * (_x[i_t+1] - _x[i_t]))%C2TPI ))
+                _y %= C2TPI
 
     def reset(self):
         self._buffer_it = 0
@@ -262,7 +281,7 @@ class SensorsPy(Sensors):
         # -------------------------------------------------------------------- #
 
 class SensorsPreprocessed(SensorsPy):
-    def __init__(self, i_bf: int, farm_data_dir: str, name: str, **kwargs):
+    def __init__(self, i_bf: int, farm_data_dir: str, name: str, fs: float, **kwargs):
         """ Imports the wind turbine estimated states from past simulations. 
 
         Along with the :class:`.StateExport` class, it allows direct 
@@ -280,6 +299,10 @@ class SensorsPreprocessed(SensorsPy):
         name : str
             Name of the subdirectory where the preprocessed sensor file where 
             saved (ie: export_args['name'])
+        fs : float
+            Sampling frequency in [Hz]. If None (by default), the original time 
+            sampling is preserved.
+
 
         See also
         --------
@@ -298,7 +321,10 @@ class SensorsPreprocessed(SensorsPy):
 
         self.n_time = len(self.data[next(iter(self.data))])
         self.time   = np.arange(self.n_time)/self.fs
+        self.n_b    = 3
 
+        self.interp(fs=fs)
+        self.fs = fs
         self._buffer_it = 0
         # -------------------------------------------------------------------- #
 
