@@ -75,17 +75,17 @@ est_args = {
     # Exports the Estimator data
     'export': {'name': 'snrs_buffer',
                'overwrite': True,
-               'user_field': ['uCx_p3D', 'uCx_p6D', 'uCx_p9D', 'uCx_p12D', 
-                                      'uCx_m2D', 'uCz_m2D', 'uCz_r', 'ti_m2D']},
+               'user_field': ['ux_d_p3D', 'ux_d_p6D', 'ux_d_p9D', 'ux_d_p12D', 
+                                      'ux_d_m2D', 'uz_d_m2D', 'uz_d_r', 'ti_m2D']},
 
     # Esimator 0  Retrieves the transverse (z) velocity component, ``w_inc``, and 
     # ----------  the yaw angle, ``yaw``, directly from the Turbine's measurements
     'estimator0': {'type': 'fld_fromdata',
-                   'meas_in':   ['uCz_m2D', 'yawA'],
-                   'state_out': ['w_inc', 'yaw']},
+                   'meas_in':   ['uz_d_m2D', 'yawA'],
+                   'state_out': ['w_inc', 'psi']},
 
     # Esimator 1  Estimates the rotor normal (x) velocity component, ``u_inc``, 
-    # ----------  and Turbulence Intensity, ``ti``, from the blade loads. 
+    # ----------  and Turbulence Intensity, ``ti``, from the blade loads. 2
     'estimator1': {'type': 'uincti_kfbem',
                    'n_sec': 8, 
                    'w_sec': 240,
@@ -132,7 +132,7 @@ with Farm(DATA, 'NREL', snrs_args, est_args, model_args,
     # Animation showing the position of the ambient and wake particles
     wf.viz_add('estimators', 
                 ['u_inc',   'w_inc',   'ti'    ], 
-                ['uCx_m2D', 'uCz_m2D', 'ti_m2D'], 
+                ['ux_d_m2D', 'uz_d_m2D', 'ti_m2D'], 
                 ['u_{WT}',  'w_{WT}',  'TI'    ], 
                 ['ms^{-1}', 'ms^{-1}', '\%'    ], 
                 offset=[31.5, 0, 31.5], 
@@ -149,7 +149,7 @@ with Farm(DATA, 'NREL', snrs_args, est_args, model_args,
     # turbine hub
     for wt in wf.wts:
         for xod in [3, 6, 9]:
-            key = f'uCx_p{xod}D'
+            key = f'ux_d_p{xod}D'
             if key in wt.snrs:
                 wf.viz_add('rews', [xod*D, 0, 0], wt=wt, u_norm=8,
                            t_ref=wt.snrs['time'], u_ref=wt.snrs[key])
