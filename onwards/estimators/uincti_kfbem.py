@@ -24,10 +24,13 @@ lg = logging.getLogger(__name__)
 
 import numpy as np
 
+from scipy.linalg import lstsq
+
 from .estimator import Estimator
 if TYPE_CHECKING:
     from turbine import Turbine
 
+from standalone.nrelControllerData import omega2v
 C2TPI    = 2. * np.pi
 CPIO180  = np.pi / 180.
 SPD2OMEG = C2TPI / 60.
@@ -103,8 +106,8 @@ class Est_uincti_kfbem(Estimator):
         
         """
 
-        meas   = ['rotSpeed', 'pitchA', 'yawA', 'theta', 'Me', 'uCx_m2D']
-        states = ['u_inc', 'ti']
+        meas   = ['rotSpeed', 'pitchA', 'yawA', 'theta', 'Me']
+        states = ['u_inc', 'ti', 'u_hub', 'shear', 'veer']
         req_states = [] 
         super().__init__(wt, meas, states, req_states, avail_states)
         
@@ -116,8 +119,9 @@ class Est_uincti_kfbem(Estimator):
         self.n_t = int((self.w_sec)//(dt))
 
         # Wind turbine initial state
-        u0  = 8.
-        ti0 = 7.
+        u0  = 8. #self.wt.snrs['ux_disk_m2D'].mean() 
+        u0 = u0 if u0<14 else 14.
+        ti0 = 0.1
         
         self.u_ref = u0 
         self.alpha = np.exp( -(dt/self.w_sec) )
@@ -136,6 +140,7 @@ class Est_uincti_kfbem(Estimator):
 
             def f(x, argf): return x[:]
             def h(x, argh): return bem_solver.QInterpolate( feed_bem(argh, x) )
+            def reboot():   return omega2v(self.wt.snrs.get_buffer_data('rotSpeed') * SPD2OMEG)
 
         else:
             raise ValueError(  f'The BEM solver type you specified ({bem_args["type"]})' 
@@ -143,16 +148,22 @@ class Est_uincti_kfbem(Estimator):
         
         # Initialisation of the Kalman filter (one for each blade)
         theta = _amod_r( np.linspace(0, C2TPI , self.n_sec+1) + self.offset_sec )
-        self._sectors = [ _Sector(self, theta[i_s:i_s+2], u0, ti0, f, h) 
+        self._sectors = [ _Sector(self, theta[i_s:i_s+2], u0, ti0, f, h, reboot) 
                                                for i_s in range(self.n_sec)    ]
+        
+        # plane fitting (shear and veer)
+        self.wp_a = np.ones((self.n_sec,3))
+        self.wp_a[:,0] = [2/3 * self.wt.af.R * np.cos(s.get_theta_mid()) for s in self._sectors ] 
+        self.wp_a[:,1] = [2/3 * self.wt.af.R * np.sin(s.get_theta_mid()) for s in self._sectors ] 
+        self.wp_b = np.zeros(self.n_sec).T
         # -------------------------------------------------------------------- #
 
     def reset(self):
         super().reset()
         dt = 1./self.wt.fs
 
-        u0  = self.wt.snrs.get_buffer_data('uCx_m2D')
-        ti0 = 7.
+        u0  = self.wt.snrs.get_buffer_data('ux_disk_m2D')
+        ti0 = 0.1
         self.u_ref = u0 
         self._state = {'u': u0, 'ubar': u0, 'ti': ti0}
 
@@ -170,17 +181,20 @@ class Est_uincti_kfbem(Estimator):
         for s in self._sectors:
             s.iterate_ekf(self.wt.t)
 
+        self.wp_b[:] = [s.get_u() for s in self._sectors]
+        self.wt.states['shear' ], self.wt.states['veer' ], self.wt.states['u_inc' ]= lstsq(self.wp_a, self.wp_b)[0]
+
         self.wt.states['u_inc' ] = sum( s.get_u() for s in self._sectors )/self.n_sec
         self.u_ref =  self.alpha * self.u_ref + (1.-self.alpha) *  self.wt.states['u_inc' ]
         self.wt.states['ti' ] = np.sqrt( sum( s.get_ti(self.u_ref) for s in self._sectors )/(self.n_sec-1) )/self.u_ref
         # -------------------------------------------------------------------- #
 
 class _Sector():
-    def __init__(self, u_est, theta, u0, ti0, f, h):
+    def __init__(self, u_est, theta, u0, ti0, f, h, reboot):
         self.u_est = u_est # parent rotor streamwise veclocity estimator
-        self.theta = theta # sector bounds 
+        self.theta = theta # sector bounds
 
-        self.ekf = _SectorEKF(u0, f, h)
+        self.ekf = _SectorEKF(u0, f, h, reboot)
 
         self.it     = -1
         self.t_prev = -1e16
@@ -208,7 +222,7 @@ class _Sector():
     def iterate_ekf(self, t):
         if self.was_updated:        
             self.it = (self.it+1)%(self.u_est.n_t)
-            self.u_se_buffer[self.it] = self.ekf.iterate(t, self.m_flap_avg) / 1.058
+            self.u_se_buffer[self.it] = self.ekf.iterate(t, self.m_flap_avg)
             self.was_updated = False
         # -------------------------------------------------------------------- #
             
@@ -223,6 +237,12 @@ class _Sector():
         return _angle_between(theta, *self.theta)
         # -------------------------------------------------------------------- #
 
+    def get_theta_mid(self):
+        x = np.sum(np.cos(self.theta))
+        y = np.sum(np.sin(self.theta))
+        return np.arctan2(y, x)
+        # -------------------------------------------------------------------- #
+    
     def get_u(self):
         return self.u_se_buffer[self.it]
         # -------------------------------------------------------------------- #
@@ -237,14 +257,14 @@ class _Sector():
         # -------------------------------------------------------------------- #
     
 class _SectorEKF():
-    def __init__(self, u0, f, h):
+    def __init__(self, u0, f, h,reboot):
         P_0  = np.array([[10.]])
         u_0  = np.array([[u0]])
-        Q    = np.array([[0.010]])
-        R    = np.array([[10E10]])
+        Q    = np.array([[.1]])
+        R    = np.array([[.1]])
         dx_0 = np.array([[0.1]])
 
-        self.EKF = _ExtendedKalmanFilter(Q, R, f, h, P_0, u_0, dx_0)
+        self.EKF = _ExtendedKalmanFilter(Q, R, f, h, P_0, u_0, dx_0, reboot)
         # -------------------------------------------------------------------- #
     
     def reset(self):
@@ -256,7 +276,7 @@ class _SectorEKF():
         # -------------------------------------------------------------------- #
 
 class _ExtendedKalmanFilter:
-    def __init__(self, Q, R, f, h, P_0, x_0, dx_0):
+    def __init__(self, Q, R, f, h, P_0, x_0, dx_0, reboot):
         self.Q, self.R, self.f, self.h  = Q, R, f, h
 
         self.nS = len(Q) # number of state
@@ -266,6 +286,7 @@ class _ExtendedKalmanFilter:
 
         self.P, self.xk, self.dxk =  P_0, x_0, dx_0
         self.P_reboot, self.xk_reboot = P_0, x_0
+        self.reboot = reboot 
 
         self._jac = np.zeros((self.nS,self.nS))
         self._dxj = np.zeros(self.nS)
@@ -300,8 +321,10 @@ class _ExtendedKalmanFilter:
         self.xk += np.dot( K, y - self.h(self.xk, argh) )
         self.P   = np.dot( self.I - K.dot(jac_h) , self.P )
 
-        if np.isnan(self.xk).any():  self.xk[:]  = self._xkm1[:]
-        if np.isnan(self.P).any() :  self.P[:,:] = self.P_reboot[:,:]
+        if np.isnan(self.xk).any(): 
+            self.xk[:]  = self.reboot()
+        if np.isnan(self.P).any() :  
+            self.P[:,:] = self.P_reboot[:,:]
 
         self.dkx[:] = self._dxkm1[:] if self.xk==self._xkm1 else self.xk-self._xkm1
 
