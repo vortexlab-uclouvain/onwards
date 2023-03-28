@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 //#include "airfoilLib.h"
 #include "macro.h"  
 #include "lagSolver.h"
@@ -33,12 +34,15 @@ WakeModel* init_WakeModel(LagSolver *wf, WindTurbine *wt) {
     wm->wf = wf;
     wm->wt = wt;
 
+    wm->d_ww = wf->d_ww[wt->i_wf]; 
+    wm->d_wf = wf->d_wf[wt->i_wf]; 
+
     init_WakeModel_set(wm, wf->set);
 
     wm->t_p     = VEC(wm->n);
     wm->xi_p    = VEC(wm->n);
     wm->ct_p    = VEC(wm->n);
-    wm->yaw_p   = VEC(wm->n);
+    wm->psi_p   = VEC(wm->n);
     wm->ti_p    = VEC(wm->n);
     wm->x_p     = (double**) malloc( sizeof(double*) * wm->n );
     wm->n_p     = (double**) malloc( sizeof(double*) * wm->n );
@@ -56,6 +60,11 @@ WakeModel* init_WakeModel(LagSolver *wf, WindTurbine *wt) {
     }
 
     init_WakeModel_states(wm);
+
+    wm->bnds = (double**) malloc( sizeof(double*) * 4 ); 
+    for (i = 0; i < 4; i++) {
+        wm->bnds[i] = VEC(2); 
+    }
 
     // Work variables
     wm->idx_  = VECINT(2); // closest part index (find_wake_part)
@@ -94,11 +103,11 @@ void init_WakeModel_states(WakeModel *wm) {
 
         // Avoid particle collision at start
         wm->t_p[i]    += (i*wm->dt);
-        wm->x_p[i][0] += (i*wm->dt) * (wm->set->cw+1E-3) * 1E-3;
-        wm->x_p[i][1] += (i*wm->dt) * (wm->set->cw+1E-3) * 1E-3;
+        wm->x_p[i][0] += (i*wm->dt) * wm->n_p[i][0] * 1E-3;
+        wm->x_p[i][1] += (i*wm->dt) * wm->n_p[i][1] * 1E-3;
     }
     
-    wm->alpha_r = exp(- wm->set->tau_r / (wm->n_shed * wm->dt) ) ;
+    wm->alpha_r = exp(- 2 * PI * (wm->n_shed * wm->dt) /  wm->set->tau_r  ) ;
 }
 /* -- end init_WakeModel_states --------------------------------------------- */
 
@@ -123,6 +132,12 @@ void free_WakeModel(WakeModel *wm) {
     FREE(SpeedDeficit, wm->sd);
 
     // Work variables
+
+    for (i = 0; i < 4; i++) {
+        free(wm->bnds[i]); 
+    }
+    free(wm->bnds); 
+
     free(wm->idx_);
     free(wm->widx_);
     free(wm->side_);
@@ -140,20 +155,49 @@ void free_WakeModel(WakeModel *wm) {
 
 void update_WakeModel(WakeModel *wm) {
     int i;
-    double *sigma;
     double *u      = VEC(2);
     double *du     = VEC(2);
     double *u_t_dt = VEC(2);
 
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    double *u_f      = VEC(2);
+    double *du_xi      = VEC(2);
+    double *du_r      = VEC(2);
+    double *du_self   = VEC(2);
+    double norm, dot, du_self_1D ;
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                
+    interp_FlowModel_d(wm->wf, wm->x_p[IP2I(wm,wm->n/2)], wm->t_p[IP2I(wm,wm->n/2)], 1, u_f, wm->d_wf); 
     for (i = 0; i < wm->n; i++) {
         wm->t_p[i] += wm->dt;
+        
+        interp_FlowModel_d(wm->wf, wm->x_p[i], wm->t_p[i], 0, u,   wm->d_wf); 
 
-        sigma = wm->wf->fms[0]->sigma_r;
-        interp_FlowModel_all(wm->wf, wm->x_p[i], wm->t_p[i], sigma, u, -1); 
-        du_part_compute_from_wf(wm->wf, wm, i, du);
+        du_partw_compute_from_wf(wm->wf, wm, i, du);
+        
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        du_self_1D = wm->sd->du_xi(wm, i, wm->xi_p[i]);
 
-        u_t_dt[0] = (u[0] - wm->set->cw * du[0]) * wm->dt;
-        u_t_dt[1] = (u[1] - wm->set->cw * du[1]) * wm->dt;
+        // Self induced speed deficit
+        du_self[0] = (du_self_1D * wm->n_p[i][0] + du[0]);
+        du_self[1] = (du_self_1D * wm->n_p[i][1] + du[1]); 
+    
+        norm   = NORM(u_f[0],u_f[1]);
+
+        u_f[0] /= norm; 
+        u_f[1] /= norm; 
+
+        // project on centerline
+        dot = DOT(du_self, u_f);
+        du_xi[0] = dot * u_f[0];
+        du_xi[1] = dot * u_f[1];
+        
+        du_r[0] = du_self[0] - du_xi[0];
+        du_r[1] = du_self[1] - du_xi[1];
+
+        u_t_dt[0] = (u[0] - wm->set->cw_r * du_r[0] - wm->set->cw_xi * du_xi[0]) * wm->dt;
+        u_t_dt[1] = (u[1] - wm->set->cw_r * du_r[1] - wm->set->cw_xi * du_xi[1]) * wm->dt;
 
         wm->x_p[i][0] += u_t_dt[0];
         wm->x_p[i][1] += u_t_dt[1];
@@ -167,9 +211,17 @@ void update_WakeModel(WakeModel *wm) {
 
     wm->it++;
 
+
     free(u);
     free(du);
     free(u_t_dt);
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    free(u_f);
+    free(du_xi);
+    free(du_r);
+    free(du_self);
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
 /* -- end update_WakeModel -------------------------------------------------- */
 
@@ -177,13 +229,13 @@ void update_WakeModel(WakeModel *wm) {
 /*               WakeModel Particles                */
 /* ------------------------------------------------ */
 
-#define FILTER(new_, old_) (1.- wm->alpha_r) * old_ +  wm->alpha_r * new_
+#define FILTER(new_, old_) wm->alpha_r * old_ +  (1.- wm->alpha_r) * new_
 void shed_wake_particle(WakeModel *wm, int i) {
     wm->t_p[i]   = 0.0;
     wm->xi_p[i]  = 0.0;
     wm->ct_p[i]  = wm->wt->snrs->ct;
     wm->ti_p[i]  = wm->wt->snrs->ti;
-    wm->yaw_p[i] = wm->wt->snrs->yaw;
+    wm->psi_p[i] = wm->wt->snrs->psi;
 
     wm->x_p[i][0]     = wm->wt->x[0];        wm->x_p[i][1]     = wm->wt->x[2];
     wm->uinc_p[i][0]  = wm->wt->snrs->u_inc; wm->uinc_p[i][1]  = wm->wt->snrs->w_inc;
@@ -192,12 +244,13 @@ void shed_wake_particle(WakeModel *wm, int i) {
     int im1 = IP2I(wm, 1);
     wm->ti_p[i]       = FILTER(wm->ti_p[i]      , wm->ti_p[im1]     );  
     wm->ct_p[i]       = FILTER(wm->ct_p[i]      , wm->ct_p[im1]     );  
-    wm->yaw_p[i]      = FILTER(wm->yaw_p[i]     , wm->yaw_p[im1]    );  
+    wm->psi_p[i]      = FILTER(wm->psi_p[i]     , wm->psi_p[im1]    );  
+    
     wm->uinc_p[i][0]  = FILTER(wm->uinc_p[i][0] , wm->uinc_p[im1][0]);   
     wm->uinc_p[i][1]  = FILTER(wm->uinc_p[i][1] , wm->uinc_p[im1][1]);  
 
     // Precomputations
-    wm->n_p[i][0]  = cos( wm->yaw_p[i]);       wm->n_p[i][1]  = -sin( wm->yaw_p[i]);
+    wm->n_p[i][0]  = cos( wm->psi_p[i]);       wm->n_p[i][1]  = -sin( wm->psi_p[i]);
     wm->n2_p[i][0] = POW2WSIGN(wm->n_p[i][0]); wm->n2_p[i][1] = POW2WSIGN(wm->n_p[i][1]);
 
     wm->sd->update(wm, i);
@@ -317,3 +370,85 @@ void project_particle_frame_WakeModel(WakeModel *wm, int i_p, double *x, double 
     *xi = (wv - wu*uv)/den;
 }
 /* -- end project_particle_frame_WakeModel ------------------------------------------- */
+
+void get_WakeModel_part_bnds(WakeModel *wm, int i, double sigma, double *x_edges, double *buffer) {
+    buffer[0] = -wm->n_p[i][1] * 2 * sigma;
+    buffer[1] =  wm->n_p[i][0] * 2 * sigma;
+
+    x_edges[0] = wm->x_p[i][0] - buffer[0];
+    x_edges[1] = wm->x_p[i][1] - buffer[1];
+
+    x_edges[2] = wm->x_p[i][0] + buffer[0];
+    x_edges[3] = wm->x_p[i][1] + buffer[1];
+}
+/* -- end get_part_bnds ----------------------------------------------------- */
+
+void update_WakeModel_bounds(WakeModel *wm) {
+    int i, i0, i_p ;
+    double m_left, m_right, m_low_loc, m_up_loc, m_low, m_up, p_left, p_right, p_low, p_up;
+
+    double *buffer    = VEC(2);
+    double *x_0       = VEC(4);
+    double *x         = VEC(4);
+    double **bnds_tmp =  (double**) malloc( sizeof(double*) * 4 );
+
+    for (i = 0; i < 4; i++) {
+        bnds_tmp[i] = VEC(4);
+    }
+
+    i0 = IP2I(wm,1);
+    get_WakeModel_part_bnds(wm, i0, wm->wt->af->D, x_0, buffer);
+    
+    // equation of up and right
+    m_low =  1e16; // min 
+    m_up  = -1e16; // max
+
+    for (i_p = 1; i_p < wm->n; i_p++) {
+        get_WakeModel_part_bnds(wm, IP2I(wm, i_p), wm->wt->af->D, x, buffer);
+
+        m_low_loc = (x[1]-x_0[1])/(x[0]-x_0[0]) + 1e-6;
+        m_up_loc  = (x[3]-x_0[3])/(x[2]-x_0[2]) + 1e-6;
+        
+        m_low = (m_low_loc > m_low) ? m_low : m_low_loc ;  
+        m_up  = (m_up_loc  < m_up)  ? m_up  : m_up_loc  ;  
+    }
+
+    p_low = x_0[1] - m_low * x_0[0];
+    p_up  = x_0[3] - m_up  * x_0[2];
+
+    // equation of left and right
+    
+    i = IP2I(wm,1);
+    m_left = -wm->n_p[i][1]/wm->n_p[i][0] + 1e-6;
+    x[0] = wm->wt->x[0] + .01 * wm->wt->af->D * wm->n_p[i][0];
+    x[1] = wm->wt->x[2] + .01 * wm->wt->af->D * wm->n_p[i][1];
+    p_left = x[0] - x[1] * m_left;
+    
+    i = IP2I(wm,wm->n-1);
+    m_right = -wm->n_p[i][1]/wm->n_p[i][0] + 1e-6;
+    x[0] = wm->x_p[i][0] + 4 * wm->wt->af->D * wm->n_p[i][0];
+    x[1] = wm->x_p[i][1] + 4 * wm->wt->af->D * wm->n_p[i][1];
+    p_right = x[0] - x[1] * m_right;
+
+    line_intersect(m_left,  p_left,  m_up,  p_up,  bnds_tmp[0]);
+    line_intersect(m_right, p_right, m_up,  p_up,  bnds_tmp[1]);
+    line_intersect(m_right, p_right, m_low, p_low, bnds_tmp[2]);
+    line_intersect(m_left,  p_left,  m_low, p_low, bnds_tmp[3]);
+
+    for (i = 0; i < 4; i++) {
+        // wm->bnds[i][0] = .1 * bnds_tmp[i][0] + .9 * wm->bnds[i][0]; 
+        // wm->bnds[i][1] = .1 * bnds_tmp[i][1] + .9 * wm->bnds[i][1];  
+        wm->bnds[i][0] = bnds_tmp[i][0]; 
+        wm->bnds[i][1] = bnds_tmp[i][1];             
+        }
+
+    for (i = 0; i < 4; i++) {
+        free(bnds_tmp[i]); 
+    }
+    free(bnds_tmp); 
+
+    free(buffer);
+    free(x_0);
+    free(x);
+}
+/* -- end update_bounds ----------------------------------------------------- */

@@ -37,16 +37,16 @@ PLANE_ID = 'plane00'
 PLOTZERO = True
 SAVE_DIR = 'mp4'
 
-COMP = 0
-
 SKELETON_ARGS = {'colors': 'w',
                  'linestyles': 'solid',
                  'linewidths': 0.6}
 
 class Field_bf():
-    def __init__(self, data_path:str, farm: Farm):
+    def __init__(self, data_path:str, farm: Farm, comp: int):
         from ensightReader import EnsightReader
         from iniReaderv2 import IniReader
+
+        self.comp = comp
 
         bf_ini = IniReader(f'{data_path}/bigflowSimu.ini')
         sim_name = bf_ini.iniDict['simName']
@@ -63,27 +63,34 @@ class Field_bf():
         }
 
         self.er_wf = EnsightReader(case_dict, rootDir=data_path, it0_override_flag=True)
-        self.x = self.er_wf.getField('Vel', COMP)[1]
+        self.x = self.er_wf.getField('Vel', self.comp)[1]
 
         # -------------------------------------------------------------------- #
 
     def __call__(self, t):
-        it = int((self.t0+t)/self.dt_bf)
+        it = int(int(self.t0+t)/self.dt_bf)
         self.er_wf.dataTimeUpdate(it)
-        return self.er_wf.getField('Vel',COMP)[0].squeeze()
+        if self.comp is None:
+            return np.sqrt(sum(self.er_wf.getField('Vel',comp)[0].squeeze()**2 for comp in [0,2]))
+        else:
+            return self.er_wf.getField('Vel',self.comp)[0].squeeze()
         # -------------------------------------------------------------------- #
 
 class Field_npz():
-    def __init__(self, data_path:str, farm: Farm):
+    def __init__(self, data_path:str, farm: Farm, comp: int):
+        self.comp = comp
         data = np.load(data_path)
 
         self.x = [data[comp] for comp in ['x', 'y', 'z']]
         self.uu = data['u']
-        self.t = data['t'] - farm.wts[0].snrs.t0
+        self.t = data['t'] - farm.wts[0].snrs.t0                                                   
         # -------------------------------------------------------------------- #
 
     def __call__(self, t):
-        return self.uu[np.argmin(np.abs(t-self.t)), COMP, :, :]
+        if self.comp is None:
+            return np.sqrt(sum(self.uu[np.argmin(np.abs(t-self.t)), self.comp, :, :]**2 for comp in [0,2]))
+        else:
+            return self.uu[np.argmin(np.abs(t-self.t)), self.comp, :, :]
         # -------------------------------------------------------------------- #
 
 class Viz_velfield(Viz):
@@ -91,9 +98,9 @@ class Viz_velfield(Viz):
     grid: Grid
     viz_type = 'velfield'
 
-    def __init__(self, farm: Farm, vel_bnds: list, comp: int, data_fid: str = False,
+    def __init__(self, farm: Farm, vel_bnds: list, comp: int=0, data_fid: str = False,
                  mp4_export: bool = True, skip: int = 1, t_start: float = None,
-                 skeleton: bool = False, show: bool = True):
+                 skeleton: bool = False, show: bool = True, slice_export: bool= False):
         """ Extracts and plots the 2D farm flow velocity velocity and compares it 
         against the reference data.
 
@@ -103,6 +110,8 @@ class Viz_velfield(Viz):
             Parent :class:`.Farm` Object
         vel_bnds : list
             User defined velocity bounds for plotting [ms-1].
+        comp : int
+            Velocity field component to be plotted.
         data_fid : str, optional
             Path to the LES 2D fields data.
         mp4_export : bool, optional
@@ -116,10 +125,13 @@ class Viz_velfield(Viz):
             comparison, by default False.
         show : bool, optional
             If True (by default), the figure GUI is updated at every timestep. 
+        slice_export: bool, optional
+            If true export hub height slices as .npy files, by default False.
         """
         super().__init__(farm)
 
         self.vel_bnds = vel_bnds
+        self.comp = comp
 
         self.grid = self.farm.lag_solver.grid
 
@@ -128,6 +140,8 @@ class Viz_velfield(Viz):
 
         # mp4 export
         self.show = show
+        self._frame_id = 0
+
         if mp4_export:
             if not self.farm.out_dir:
                 raise ValueError(
@@ -136,9 +150,20 @@ class Viz_velfield(Viz):
             self.mp4_dir = f'{self.__dirgen__()}/{SAVE_DIR}'
             if not os.path.exists(self.mp4_dir):
                 os.makedirs(self.mp4_dir)
-            self._frame_id = 0
         else:
             self.mp4_dir = False
+
+        # slice export
+        if slice_export:
+            if not self.farm.out_dir:
+                raise ValueError(
+                    'slice_export can not be set to True if no output directory is specified in farm.')
+
+            self.slice_dir = f'{self.__dirgen__()}/slices/'
+            if not os.path.exists(self.slice_dir):
+                os.makedirs(self.slice_dir)
+        else:
+            self.slice_dir = False
              
         # wake skeleton overlay
         self.skeleton = skeleton
@@ -185,6 +210,18 @@ class Viz_velfield(Viz):
                                   extent=[*[x/af_d for x in self.grid.x_bnds],
                                          *[z/af_d for z in self.grid.z_bnds]], 
                                  **self.im_args)
+        
+        self.plt_bnds_f = [None]*self.farm.n_wts
+        self.plt_bnds_w = [None]*self.farm.n_wts
+        for i_wt in range(self.farm.n_wts):
+            comp_domain = self.farm.lag_solver.get_bounds('F',i_wt)
+            self.plt_bnds_f[i_wt] = plt.plot( [comp_domain[0][i][0] for i in range(-1,4)],
+                                              [comp_domain[0][i][1] for i in range(-1,4)], 'k' )
+            
+            comp_domain = self.farm.lag_solver.get_bounds('W',i_wt)
+            self.plt_bnds_w[i_wt] = plt.plot( [comp_domain[i][0] for i in range(-1,4)],
+                                              [comp_domain[i][1] for i in range(-1,4)], 'k--' )
+
         self.plt_wt_mod = self._set_layout(plt.gca(), self.im_mod, skip_x=bool(data_fid))
 
         # AX1: reference data plot
@@ -192,9 +229,13 @@ class Viz_velfield(Viz):
         if data_fid:
             i_ax += 1
             plt.sca(self.axs[i_ax][0])
-            self.__init_ref__(data_fid)
+            uu_ref = self.__init_ref__(data_fid)
 
-        uu_mod = self.grid.u_compute()[COMP]
+        if self.comp is None:
+            uu_mod =  np.sqrt(sum(self.grid.u_compute()**2))
+        else:
+            uu_mod = self.grid.u_compute()[self.comp]
+
         if self.skeleton:
             self.skeleton_args = { 'levels':np.linspace(*self.vel_bnds, 7),
                                     'vmin':self.vel_bnds[0],
@@ -202,7 +243,7 @@ class Viz_velfield(Viz):
 
             self.im_ref_skeleton = plt.contour(self.grid._x/self.farm.af.D,
                                                self.grid._z/self.farm.af.D,
-                                               uu_mod.T,
+                                               np.rot90(uu_mod),
                                                **self.skeleton_args)
         self.time_txt = plt.suptitle('')
 
@@ -215,13 +256,25 @@ class Viz_velfield(Viz):
         # Updating data
         self.update()
 
+        if self.slice_dir:
+            np.save(f'{self.slice_dir}/x_mod.npy', 
+                 np.array([self.grid._x, self.grid._z], dtype=object))
+            self.slice_acc_mod = np.zeros_like(uu_mod)
+            if self.data_fid:
+                np.save(f'{self.slice_dir}/x_ref.npy', 
+                    np.array([self.fld_getter.x[0], self.fld_getter.x[2]], dtype=object))
+                self.slice_acc_ref = np.zeros_like(uu_ref)
+
+            if 'yawA' in self.farm.wts[0].snrs:
+                np.save(f'{self.slice_dir}/psi.npy',[self.farm.wts[0].snrs['time'], [np.deg2rad(wt.snrs['yawA']) for wt in self.farm.wts]]) 
+
         # -------------------------------------------------------------------- #
     
     def __init_ref__(self, data_fid: str):
         if data_fid.endswith('.npz'):  
-            self.fld_getter = Field_npz(f'{self.farm.data_dir}/{data_fid}', self.farm)
+            self.fld_getter = Field_npz(f'{self.farm.data_dir}/{data_fid}', self.farm, self.comp)
         else:
-            self.fld_getter = Field_bf(data_fid, self.farm)
+            self.fld_getter = Field_bf(data_fid, self.farm, self.comp)
         
         x_ref = self.fld_getter.x
 
@@ -255,6 +308,8 @@ class Viz_velfield(Viz):
                                 **self.im_args )
 
         self.plt_wt_ref = self._set_layout(plt.gca(), self.im_ref, skip_x=False)
+
+        return uu_ref
         # -------------------------------------------------------------------- #
 
     def _set_layout(self, ax: plt.Axes, im, skip_x: bool = False):
@@ -288,17 +343,28 @@ class Viz_velfield(Viz):
         if not self.farm.update_LagSolver_flag:
             return
 
-        self.farm.t= self.farm.t
-
         plt.figure(self.fig.number)
         self.time_txt.set_text(r'$t={'+f'{self.farm.t:2.1f}'+r'}\; [s]$')
 
         if (self.farm.it % self.skip) > 0 or self.farm.t< self.t_start:
             return
 
-        uu_mod = self.grid.u_compute()[COMP]
+        if self.comp is None:
+            uu_mod = np.sqrt(sum(self.grid.u_compute(filt='rotor')**2))
+        else:
+            uu_mod = self.grid.u_compute(filt='rotor')[self.comp]
+
         self.im_mod.set_data(np.rot90(uu_mod))
         self._layout_update(self.plt_wt_mod)
+
+        for i_wt, (p_f, p_w) in enumerate(zip(self.plt_bnds_f, self.plt_bnds_w)):
+            comp_domain = self.farm.lag_solver.get_bounds('F',i_wt)
+            p_f[0].set_xdata([comp_domain[1][i][0]/self.farm.af.D for i in range(-1,4)])
+            p_f[0].set_ydata([comp_domain[1][i][1]/self.farm.af.D for i in range(-1,4)])
+
+            comp_domain = self.farm.lag_solver.get_bounds('W',i_wt)
+            p_w[0].set_xdata([comp_domain[i][0]/self.farm.af.D    for i in range(-1,4)])
+            p_w[0].set_ydata([comp_domain[i][1]/self.farm.af.D    for i in range(-1,4)])
 
         if self.data_fid:
             uu_ref = self.fld_getter(self.farm.t)
@@ -313,30 +379,50 @@ class Viz_velfield(Viz):
                                               self.grid._z/self.farm.af.D,
                                               uu_mod.T,
                                               **self.skeleton_args)
-
-
         if self.show:
             plt.draw()
             plt.pause(0.1)
 
         if self.mp4_dir:
             self.__savefig__(f'/{SAVE_DIR}/frame{self._frame_id:03d}.png', dpi=200)
-            self._frame_id += 1
+        
+        if self.slice_dir:
+            np.save(f'{self.slice_dir}/u_mod_{self._frame_id}.npy', 
+                                  np.array([self.farm.t, uu_mod], dtype=object))
+            self.slice_acc_mod += uu_mod 
+            if self.data_fid: 
+                np.save(f'{self.slice_dir}/u_ref_{self._frame_id}.npy', 
+                                     np.array([self.farm.t, uu_ref], dtype=object))
+                self.slice_acc_ref += uu_ref
+
+        self._frame_id += 1
         # -------------------------------------------------------------------- #
 
     def _data_clean(self, *args, **kwargs):
+       
+        if self.slice_dir:
+            np.save(f'{self.slice_dir}/u_mod_avg.npy', 
+                                  np.array(self.slice_acc_mod/self._frame_id) ) 
+            if self.data_fid: 
+                np.save(f'{self.slice_dir}/u_ref_avg.npy', 
+                                     np.array(self.slice_acc_ref/self._frame_id) )
+            
+
+
         if not self.mp4_dir: 
             return
 
         if os.system('which ffmpeg > /dev/null 2>&1')==0:
             frame_rate = 10 # [Hz]
-            out_name = 'velfield_anim.mp4'
+            out_name = 'velfield_anim'
             
             lg.info(f'Generating {out_name} (logging to ffmpeg.log)')
             os.system( f'ffmpeg -r {frame_rate} -i {self.mp4_dir}/frame%03d.png'
-                     + f' -vcodec mpeg4 -y {self.__dirgen__()}/{out_name}'
+                     + f' -vcodec mpeg4 -y {self.__dirgen__()}/{out_name}.mp4'
                      + f'> {self.__dirgen__()}/ffmpeg.log 2>&1 ')
             
+            # os.system( f'convert {self.mp4_dir}/*.png {self.__dirgen__()}/{out_name}.gif' )
+
             for fid in os.listdir(self.mp4_dir): os.remove(f'{self.mp4_dir}/{fid}')
             os.rmdir(self.mp4_dir)
         else:

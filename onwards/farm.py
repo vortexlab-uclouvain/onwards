@@ -240,9 +240,13 @@ class Farm:
         """        
         self.out_dir = f'{data_dir}/onwards_run_{self.__get_runid__()}' \
                                                  if out_dir is None else out_dir
-        if self.out_dir and not os.path.exists(self.out_dir):
+        if self.out_dir:
             lg.info(f'Data exported to {self.out_dir}.')
-            os.makedirs(self.out_dir)
+            if not os.path.exists(self.out_dir):
+                os.makedirs(self.out_dir)
+
+            with open(f'{self.out_dir}/path.txt', 'w') as fid:
+                fid.write(self.data_dir)
 
             if enable_logger: # adding a log file handler
                 fh = logging.FileHandler(f'{self.out_dir}/onwards.log')
@@ -446,4 +450,7 @@ class Farm:
                 v.export()
         # -------------------------------------------------------------------- #
 
-
+    def export_geo(self):
+        if self.out_dir:
+            np.save(f'{self.out_dir}/geo.npy', self.x_wts)
+        # -------------------------------------------------------------------- #

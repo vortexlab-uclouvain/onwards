@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 # MINIMAL_STATES contains the estimated wind turbine states s_wt required by the 
 # LagSolver 
-MINIMAL_STATES = [ 'u_inc', 'u_fs', 'w_inc', 'w_fs', 'ct', 'ti', 'yaw' ]
+MINIMAL_STATES = [ 'u_inc', 'u_fs', 'w_inc', 'w_fs', 'ct', 'ti', 'psi']
 
 class Turbine:
     farm : Farm
@@ -205,24 +205,16 @@ class Turbine:
 
         Note
         ----
-        The user can introduce its own Estimator following :class:`.Estimator` 
-        class specifications.
-
-            >>> elif e_type == 'fld_myest': 
-            >>>     from .estimators.fld_myest import Est_fld_myest as Estimator
+        The user can implement his own Estimator objects following the :class:`.Estimator`
+        prototype class. These Estimator subclass should be named ``Estimator_myname`` and 
+        saved to a file named ``onwards_estimator_myname.py`` available in the python 
+        path.
 
         Estimators are applied recursively starting from the ``estimator0`` to
         ``estimatorn``. The states are updated accordingly as some Estimator 
         might rely on previous state estimations to compute its output state. 
         eg: ct estimations are likely to depend on the estimation of the Rotor 
         Effective Wind Speed.   
-
-        Note
-        ----
-        The user can implement his own Estimator objects following the :class:`.Estimator`
-        prototype class. These Estimator subclass should be named ``Estimator_myname`` and 
-        saved to a file named ``onwards_estimator_myname.py`` available in the python 
-        path.
 
         See also
         --------
@@ -332,8 +324,8 @@ class Turbine:
             The position (x, z) of the tip of the turbines blades given the 
             current rotor orientation.
         """        
-        # theta = np.deg2rad(self.states['yaw'])
-        theta = self.states['yaw']
+        # theta = np.deg2rad(self.states['psi'])
+        theta = self.states['psi']
         tmp = np.array([-1,1]) * self.af.R
         return [ self.x[0] + tmp*np.sin(theta), 
                  self.x[2] + tmp*np.cos(theta) ]

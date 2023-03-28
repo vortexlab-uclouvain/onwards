@@ -111,7 +111,7 @@ try:
 except ImportError: 
     lg.info('ReadCenterlineForWM not available: using local implementation.')
 
-I_MASK = 0
+I_MASK = 1
 
 class Viz_centerline(Viz):
     viz_type = 'centerline'
@@ -219,8 +219,8 @@ class Viz_centerline(Viz):
                     self.data['zc_ref'][i_wt] = [wm.z for wm in wms]
                     self.data['zc_mod'][i_wt] = [np.zeros( (n_t, n_x) )]
 
-                    if np.sqrt( (  np.sqrt((self.data['x'][i_wt][0]-wt.x[0])**2 
-                                        + (self.data['zc_ref'][i_wt][0][-1,0]-wt.x[2])**2 )) > farm.af.D ):
+                    if (  np.sqrt((self.data['x'][i_wt][0]-wt.x[0])**2 
+                                        + (self.data['zc_ref'][i_wt][0][-1,0]-wt.x[2])**2 )) > farm.af.D :
                         raise Exception(  f'Wake tracking initial position and wind'
                                         + f'turbine location do not match.')
             

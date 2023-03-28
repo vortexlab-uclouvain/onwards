@@ -105,19 +105,24 @@ class StateExportBuffer():
         self._idx   = -1
         
         self.states      = wt.states
-        self.states_user = []
+        self.states_user = set()
 
         for s in export_args.get('user_field', []): 
             if s in self.states:
                 raise ValueError('Conflicting export field ({s}) in states_user.')
-            if s in wt.snrs:
-                self.states_user.append(s)
+            if '*' in s: # wildcard import
+                p = s.rsplit('*',2)
+                for k in wt.snrs.data:
+                    if (k.startswith(p[0]) and k.endswith(p[1])):
+                        self.states_user.add(k)
+            elif s in wt.snrs:
+                self.states_user.add(s)
             else:
                 lg.warning(f'Field {s} not available in sensors for wt{wt.i_bf}.')
         self.wt = wt
 
         self.data = {s: np.empty(self.n_time) for s in 
-                                    list(self.states.keys()) + self.states_user}
+                                    set(self.states.keys()) | self.states_user}
         self.fs   = wt.fs
         
         self.t0 =  getattr(wt.snrs, 't0', 0.0)

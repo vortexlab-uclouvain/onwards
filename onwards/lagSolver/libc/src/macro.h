@@ -30,6 +30,8 @@
 #define NORM(a_,b_) sqrt( a_*a_ + b_*b_ )
 #define DOT(a_,b_)  (a_[0]*b_[0] + a_[1]*b_[1])
 
+#define MIN(a_,b_)  (((a_) < (b_)) ? (a_) : (b_))
+
 #define POW2WSIGN(a_) copysign(a_*a_,a_)
 #define SQRTWSIGN(a_) copysign(sqrt(fabs(a_)),a_)
 
