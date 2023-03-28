@@ -214,9 +214,9 @@ class Viz_velfield(Viz):
         self.plt_bnds_f = [None]*self.farm.n_wts
         self.plt_bnds_w = [None]*self.farm.n_wts
         for i_wt in range(self.farm.n_wts):
-            comp_domain = self.farm.lag_solver.get_bounds('F',i_wt)
-            self.plt_bnds_f[i_wt] = plt.plot( [comp_domain[0][i][0] for i in range(-1,4)],
-                                              [comp_domain[0][i][1] for i in range(-1,4)], 'k' )
+            comp_domain = self.farm.lag_solver.get_bounds('F',i_wt, i_sigma=1)
+            self.plt_bnds_f[i_wt] = plt.plot( [comp_domain[0][0] for i in range(-1,4)],
+                                              [comp_domain[0][1] for i in range(-1,4)], 'k' )
             
             comp_domain = self.farm.lag_solver.get_bounds('W',i_wt)
             self.plt_bnds_w[i_wt] = plt.plot( [comp_domain[i][0] for i in range(-1,4)],
@@ -350,17 +350,17 @@ class Viz_velfield(Viz):
             return
 
         if self.comp is None:
-            uu_mod = np.sqrt(sum(self.grid.u_compute(filt='rotor')**2))
+            uu_mod = np.sqrt(sum(self.grid.u_compute()**2))
         else:
-            uu_mod = self.grid.u_compute(filt='rotor')[self.comp]
+            uu_mod = self.grid.u_compute()[self.comp]
 
         self.im_mod.set_data(np.rot90(uu_mod))
         self._layout_update(self.plt_wt_mod)
 
         for i_wt, (p_f, p_w) in enumerate(zip(self.plt_bnds_f, self.plt_bnds_w)):
-            comp_domain = self.farm.lag_solver.get_bounds('F',i_wt)
-            p_f[0].set_xdata([comp_domain[1][i][0]/self.farm.af.D for i in range(-1,4)])
-            p_f[0].set_ydata([comp_domain[1][i][1]/self.farm.af.D for i in range(-1,4)])
+            comp_domain = self.farm.lag_solver.get_bounds('F',i_wt, i_sigma=0)
+            p_f[0].set_xdata([comp_domain[1][0]/self.farm.af.D for i in range(-1,4)])
+            p_f[0].set_ydata([comp_domain[1][1]/self.farm.af.D for i in range(-1,4)])
 
             comp_domain = self.farm.lag_solver.get_bounds('W',i_wt)
             p_w[0].set_xdata([comp_domain[i][0]/self.farm.af.D    for i in range(-1,4)])
