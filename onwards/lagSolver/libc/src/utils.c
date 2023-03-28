@@ -64,7 +64,7 @@ int in_triangle(double *x, double *a, double *b, double *c){
 
 	double w1 = (a[0] * s1 + s4 * s2 - x[0] * s1) / (s3 * s2 - (b[0]-a[0]) * s1);
 	double w2 = (s4- w1 * s3) / s1;
-	return w1 >= 0 & w2 >= 0 & (w1 + w2) <= 1;
+	return ( (w1 >= 0) & (w2 >= 0) & ((w1 + w2) <= 1) );
 }
 
 int in_quad(double *x, double *a, double *b, double *c, double *d) {
