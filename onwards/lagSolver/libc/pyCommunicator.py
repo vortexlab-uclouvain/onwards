@@ -26,6 +26,7 @@ import numpy as np
 from ctypes import POINTER, pointer, c_int, c_double, c_char
 c_double_p = POINTER(c_double) 
 c_double_pp = POINTER(c_double_p) 
+c_double_ppp = POINTER(c_double_pp) 
 
 from ...airfoil import c_Airfoil_p
 from ...turbine import MINIMAL_STATES, Turbine
@@ -137,7 +138,8 @@ class c_Set(ctypes.Structure):
                 ('n_shed_wm',     c_int   ),
                 ('sd_type',       c_int   ),
                 ('c0',            c_double),
-                ('cw',            c_double),
+                ('cw_xi',         c_double),
+                ('cw_r',          c_double),
                 ('dt',            c_double),
                 ('sigma_xi_f',    c_double),
                 ('sigma_r_f',     c_double),
@@ -206,7 +208,8 @@ class c_FlowModel(ctypes.Structure):
                  ('xi_p',    c_double_p),
                  ('x_p',     c_double_pp),
                  ('u_p',     c_double_pp),
-                 ('uf_p',    c_double_pp) ]
+                 ('uf_p',    c_double_pp),
+                 ('bounds',  c_double_ppp) ]
 
 c_FlowModel_p = POINTER(c_FlowModel)
 
@@ -223,9 +226,10 @@ class c_WakeModel(ctypes.Structure):
                  ('xi_p',    c_double_p),
                  ('ct_p',    c_double_p),
                  ('ti_p',    c_double_p),
-                 ('yaw_p',    c_double_p),
+                 ('psi_p',   c_double_p),
                  ('x_p',     c_double_pp),
-                 ('uinc_p',  c_double_pp) ]
+                 ('uinc_p',  c_double_pp),
+                 ('bounds',  c_double_pp)  ]
 
 c_WakeModel_p = POINTER(c_WakeModel)
 
@@ -263,7 +267,7 @@ _ls_lib.reset_LagSolver.restype  = None
 reset_LagSolver = _ls_lib.reset_LagSolver
 
 # Computing flow field
-_ls_lib.rews_compute.argtypes = [c_LagSolver_p, c_double_p, c_double]
+_ls_lib.rews_compute.argtypes = [c_LagSolver_p, c_double_p, c_double, c_int]
 _ls_lib.rews_compute.restype  = c_double
 rews_compute = _ls_lib.rews_compute
 

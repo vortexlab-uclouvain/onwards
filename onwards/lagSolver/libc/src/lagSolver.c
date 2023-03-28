@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 //#include "airfoilLib.h"
 #include "macro.h"  
 #include "lagSolver.h"
@@ -26,6 +27,21 @@
 /* ------------------------------------------------ */
 /*           LagSolver (FastFarmFlow model)          */
 /* ------------------------------------------------ */
+
+int** init_dep_matrix(LagSolver *wf) {
+    int i;
+    int **d = (int**)  malloc( sizeof(int*) * wf->n_wt ) ;
+
+    for (i = 0; i < wf->n_wt ; i++)
+    {
+        d[i] = VECINT( wf->n_wt );
+    }
+    reset_dep_matrix(wf, d);
+
+    return d;
+};
+
+/* -- end init_dep_matrix --------------------------------------------------- */
 
 LagSolver* init_LagSolver(int n_wt, LagSet *set) {
     LagSolver *wf = ALLOC(LagSolver);
@@ -37,10 +53,28 @@ LagSolver* init_LagSolver(int n_wt, LagSet *set) {
     wf->wts = (WindTurbine**)  malloc( sizeof(WindTurbine*) * wf->n_wt ) ;
     wf->fms = (FlowModel**)    malloc( sizeof(FlowModel*)   * wf->n_wt ) ;
     wf->wms = (WakeModel**)    malloc( sizeof(WakeModel*)   * wf->n_wt ) ;
+
+    wf->d_ww = init_dep_matrix(wf);
+    wf->d_wf = init_dep_matrix(wf);
+    wf->d_ff = init_dep_matrix(wf);
+
+    wf->it = 0;
+    wf->n_shed = MIN(wf->set->n_shed_fm, wf->set->n_shed_wm);
     
     return wf;
 };
 /* -- end init_LagSolver ----------------------------------------------------- */
+
+void reset_dep_matrix(LagSolver *wf, int **d) {
+    int i, j;
+    for (i = 0; i < wf->n_wt ; i++)
+    {
+        for (j = 0; j < wf->n_wt ; j++) {
+            d[i][j] = 1;
+        }
+    }
+};
+/* -- end reset_dep_matrix -------------------------------------------------- */
 
 void reset_LagSolver(LagSolver *wf) {
     // wf->set updated externally
@@ -51,9 +85,27 @@ void reset_LagSolver(LagSolver *wf) {
         init_FlowModel_states(wf->fms[i_wt]);
         init_WakeModel_states(wf->wms[i_wt]);
     }
+
     wf->t = wf->wts[0]->t;
+    wf->it = 0;
+    wf->n_shed = MIN(wf->set->n_shed_fm, wf->set->n_shed_wm);
+
+    reset_dep_matrix(wf, wf->d_ww);
+    reset_dep_matrix(wf, wf->d_wf);
+    reset_dep_matrix(wf, wf->d_ff);
 };
 /* -- end reset_LagSolver --------------------------------------------------- */
+
+
+void free_dep_matrix(LagSolver *wf, int **d) {
+    int i;
+    for (i = 0; i < wf->n_wt ; i++)
+    {
+        free(d[i]);
+    }
+    free(d);
+};
+/* -- end free_LagSolver ----------------------------------------------------- */
 
 void free_LagSolver(LagSolver *wf) { 
     int i_wt;
@@ -63,8 +115,12 @@ void free_LagSolver(LagSolver *wf) {
         FREE(WakeModel, wf->wms[i_wt]);
     }
     // free(wf->wts);
+    
     free(wf->fms);
     free(wf->wms);
+    free_dep_matrix(wf, wf->d_ww);
+    free_dep_matrix(wf, wf->d_wf);
+    free_dep_matrix(wf, wf->d_ff);
 };
 /* -- end free_LagSolver ----------------------------------------------------- */
 
@@ -75,7 +131,22 @@ void update_LagSolver(LagSolver *wf) {
         update_FlowModel(wf->fms[i_wt]);
         update_WakeModel(wf->wms[i_wt]);
     }
-    wf->t += wf->set->dt; 
+    
+    if (wf->it%wf->n_shed==0){  
+        for (i_wt = 0; i_wt < wf->n_wt; i_wt++) {
+            update_FlowModel_bounds(wf->fms[i_wt]);
+        }
+
+        for (i_wt = 0; i_wt < wf->n_wt; i_wt++) {
+            update_WakeModel_bounds(wf->wms[i_wt]);
+        }
+        build_dep_matrix_ww(wf); 
+        build_dep_matrix_wf(wf); 
+        build_dep_matrix_ff(wf); 
+    }
+
+    wf->t  += wf->set->dt; 
+    wf->it += 1; 
 };
 /* -- end update_LagSolver --------------------------------------------------- */
 
@@ -112,3 +183,40 @@ void is_freestream(LagSolver *wf,  WindTurbine *wt) {
 
     wt->is_fs = (wt->is_fs==0);
 }
+/* -- end is_freestream ----------------------------------------------------- */
+
+void build_dep_matrix_ff(LagSolver *wf) { 
+    int i, j;
+    for (i = 0; i < wf->n_wt; i++) {
+        for (j = 0; j < (i); j++) {
+            wf->d_ff[i][j] = intersect(wf->fms[i]->bnds[0], wf->fms[j]->bnds[0]);
+            wf->d_ff[j][i] = wf->d_ff[i][j];
+        }
+    }
+    for (i = 0; i < wf->n_wt; i++) { wf->d_ff[i][i] = 1; }
+}
+/* -- end build_dep_matrix_ff ----------------------------------------------- */
+
+void build_dep_matrix_ww(LagSolver *wf) { 
+    int i, j;
+    for (i = 0; i < wf->n_wt; i++) {
+        for (j = 0; j < (i); j++) {
+            wf->d_ww[i][j] = intersect(wf->wms[i]->bnds, wf->wms[j]->bnds);
+            wf->d_ww[j][i] = wf->d_ww[i][j];
+        }
+    }
+    for (i = 0; i < wf->n_wt; i++) { wf->d_ww[i][i] = 1; }
+}
+/* -- end build_dep_matrix_ww ----------------------------------------------- */
+
+void build_dep_matrix_wf(LagSolver *wf) { 
+    int i, j;
+    for (i = 0; i < wf->n_wt; i++) {
+        for (j = 0; j < (i); j++) {
+            wf->d_wf[i][j] = intersect(wf->fms[i]->bnds[0], wf->wms[j]->bnds);
+            wf->d_wf[j][i] = wf->d_wf[i][j];
+        }
+    }
+    for (i = 0; i < wf->n_wt; i++) { wf->d_wf[i][i] = 1; }
+}
+/* -- end build_dep_matrix_wf ----------------------------------------------- */

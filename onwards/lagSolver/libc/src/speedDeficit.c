@@ -118,7 +118,7 @@ double du_xi_r_BPA(WakeModel *wm, int i, double xi, double r) {
         double rad = 1 - wm->ct_p[i] / (8.*sig_o_d_sqr);
 
         double fac = (1 - sqrt(rad * (rad>0)))
-                         * exp( -1./(2*sig_o_d_sqr) * pow(r/wm->wt->af->D,2.) );
+                         * exp( -1./(2*sig_o_d_sqr) * pow(r/wm->wt->af->D,2) );
 
         return wm->uinc_p[i][0] * (    (fac <(1 - NW[i])) * fac 
                                     +  (fac>=(1 - NW[i])) * (1 - NW[i]) ); 
@@ -192,10 +192,9 @@ void du2_part_compute_from_wm(WakeModel *wm, double *x, double *du_interp, doubl
                 
                 du2 += du * (1.-w_idx_p[i_w])/9.;
             }
-            du2 = POW2WSIGN(du2);
 
-            du_interp[0] += du2 * wm->n2_p[i][0];
-            du_interp[1] += du2 * wm->n2_p[i][1];
+            du_interp[0] += du2 * wm->n_p[i][0];
+            du_interp[1] += du2 * wm->n_p[i][1];
         }
     }
 }
@@ -222,26 +221,46 @@ void du2_pos_compute_from_wm(WakeModel *wm, double *x, double *du_interp,
             du2 += wm->sd->du_xi_r(wm, i, wm->xi_p[i] + *xi*side, *r) * (1.-w_idx_p[i_w]);
         }
         
-        du2 = POW2WSIGN(du2);
-        du_interp[0] = du2 * wm->n2_p[i][0];
-        du_interp[1] = du2 * wm->n2_p[i][1];
+        du_interp[0] = du2 * wm->n_p[i][0];
+        du_interp[1] = du2 * wm->n_p[i][1];
     }
     else {
         du_interp[0] = 0.0;
         du_interp[1] = 0.0;
     }
 }
-/* -- end du_part_compute_from_wm ------------------------------------------s- */
+/* -- end du_part_compute_from_wm ------------------------------------------- */
+
+void du_partw_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp) {
+    
+    double ravg = wm_p->wt->af->R;
+
+    du_interp[0] = 0;
+    du_interp[1] = 0;
+
+    // Deficit induced by other wakes 
+    int i_wm, i_wm_p;
+    i_wm_p = wm_p->wt->i_wf;
+
+    for ( i_wm = 0; i_wm < i_wm_p; i_wm++) {
+        if (wf->d_ww[i_wm][i_wm_p]) {
+            du2_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);
+        }
+    }
+    for ( i_wm = i_wm_p+1; i_wm < wf->n_wt ; i_wm++) {
+        if (wf->d_ww[i_wm][i_wm_p]) {
+            du2_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);     
+        }
+    }
+}
+/* -- end du_partw_compute_from_wf ------------------------------------------- */
 
 void du_part_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp) {
     
     double ravg = wm_p->wt->af->R;
 
-    double du2_norm = pow( wm_p->sd->du_xi(wm_p, i_p, 0.0) , 2);
-
-    // Self induced speed deficit
-    du_interp[0] = (du2_norm * wm_p->n2_p[i_p][0]);
-    du_interp[1] = (du2_norm * wm_p->n2_p[i_p][1]); 
+    du_interp[0] = 0;
+    du_interp[1] = 0;
 
     // Deficit induced by other wakes 
     int i_wm, i_wm_p;
@@ -253,9 +272,6 @@ void du_part_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du
     for ( i_wm = i_wm_p+1; i_wm < wf->n_wt ; i_wm++) {
         du2_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);     
     }
-    
-    du_interp[0] = SQRTWSIGN(du_interp[0]);
-    du_interp[1] = SQRTWSIGN(du_interp[1]);    
 }
 /* -- end du_pos_compute_from_wf -------------------------------------------- */
 
@@ -274,8 +290,8 @@ void du_pos_compute_from_wf(LagSolver *wf, double *x, double *du_interp,
         du2[1] += du2_loc[1];
     }
 
-    du_interp[0] = SQRTWSIGN(du2[0]);
-    du_interp[1] = SQRTWSIGN(du2[1]);
+    du_interp[0] = du2[0];
+    du_interp[1] = du2[1];
 }
 /* -- end du_pos_compute_from_wf -------------------------------------------- */
 
@@ -288,10 +304,23 @@ void du_ravg_pos_compute_from_wf(LagSolver *wf, double *x, double *du_interp, do
     int i_wm;
     for ( i_wm = 0; i_wm < wf->n_wt; i_wm++) {
         du2_part_compute_from_wm(wf->wms[i_wm], x, du_interp, ravg);
-    }
+    }   
+}
+/* -- end du_ravg_pos_compute_from_wf -------------------------------------------- */
 
-    du_interp[0] = SQRTWSIGN(du_interp[0]);
-    du_interp[1] = SQRTWSIGN(du_interp[1]);    
+
+void du_ravg_posf_compute_from_wf(LagSolver *wf, int i_fm, double *x, double *du_interp, double ravg) {
+
+    du_interp[0] = 0.0;
+    du_interp[1] = 0.0; 
+
+    // Deficit induced by other wakes 
+    int i_wm;
+    for ( i_wm = 0; i_wm < wf->n_wt; i_wm++) {
+        if (wf->d_wf[i_wm][i_fm]) {
+            du2_part_compute_from_wm(wf->wms[i_wm], x, du_interp, ravg);
+        }
+    }
 }
 /* -- end du_ravg_pos_compute_from_wf -------------------------------------------- */
 
@@ -316,7 +345,7 @@ void du_pos3d_compute_from_wf(LagSolver *wf, double *x_vec, double *du_interp) {
 
 
 void ueff_xyz(LagSolver *wf, double *x_vec, double *u, double *du) {
-    interp_FlowModel_all(wf, x_vec, wf->wts[0]->t, wf->fms[0]->sigma_f, u, -1);
+    interp_FlowModel_all(wf, x_vec, wf->wts[0]->t, 0, u, -1);
     du_pos3d_compute_from_wf(wf, x_vec, du);
     
     u[0] -= du[0];
@@ -329,7 +358,7 @@ double R_INT[16] = {0.4597008433809831, 0.8880738339771151, 0.4597008433809831, 
 double T_INT[16] = {0.0000000000000000, 0.3926990816987241, 0.7853981633974483, 1.1780972450961724, 1.5707963267948966, 1.9634954084936207, 2.356194490192345, 2.748893571891069, 3.141592653589793, 3.5342917352885173, 3.9269908169872414, 4.319689898685965, 4.71238898038469, 5.105088062083414, 5.497787143782138, 5.890486225480862};
 double W_INT[16] = {0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625};
 
-double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor) {
+double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor, int comp) {
 
     int i;
 
@@ -349,7 +378,7 @@ double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor) {
         
         ueff_xyz(wf, x_eval, u, du);
 
-        sum +=  u[0] * W_INT[i];
+        sum +=  u[comp] * W_INT[i];
     }
 
     free(u);
@@ -376,7 +405,7 @@ int is_waked_by(WakeModel *wm, WindTurbine *wt) {
 
     free(x_wt);
     
-    return ( du_loc/wt->snrs->u_inc > 0.15 );
+    return ( du_loc/wt->snrs->u_inc > 0.05 );
 }
 
 /* -- end is_waked_by ------------------------------------------- */

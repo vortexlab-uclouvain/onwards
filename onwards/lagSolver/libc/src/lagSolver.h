@@ -48,7 +48,7 @@ typedef struct {
     double w_fs;
     double ct;
     double ti;
-    double yaw;
+    double psi;
 } SnsrsData;
 /* -------------------------------------------------------------------------- */
 
@@ -69,7 +69,8 @@ typedef struct {
     int n_shed_wm;
     int sd_type;
     double c0;
-    double cw;
+    double cw_xi;
+    double cw_r;
     double dt;
     double sigma_xi_f;    
     double sigma_r_f;
@@ -117,12 +118,17 @@ struct FlowModel {
     double **u_p;
     double **uf_p;
 
+    double ***bnds;
+    
     // Opaque part of the structure
+    int *d_ff;
+    int *d_wf;
+
     double *sigma_r;
     double *sigma_f;
+    double **sigma;
 
     double *w_shep;
-    double *bnds;
 
     double *x_p_loc_;
     double *xi_;
@@ -148,11 +154,16 @@ struct WakeModel {
     double *xi_p;
     double *ct_p;
     double *ti_p;
-    double *yaw_p;
+    double *psi_p;
     double **x_p;
     double **uinc_p;
 
+    double **bnds;
+
     // Opaque part of the structure
+
+    int *d_ww;
+    int *d_wf;
 
     double alpha_r;
 
@@ -184,6 +195,13 @@ struct LagSolver {
     int n_wt;
     double t;
 
+    int it;
+    int n_shed;
+
+    int **d_ff;
+    int **d_ww;
+    int **d_wf;
+
     LagSet *set;
     
     // Wind Turbines mapping
@@ -201,6 +219,8 @@ struct LagSolver {
 LagSolver* init_LagSolver(int n_wt, LagSet *set);
 void reset_LagSolver(LagSolver *wf);
 void free_LagSolver(LagSolver *wf);
+int** init_dep_matrix(LagSolver *wf);
+void reset_dep_matrix(LagSolver *wf, int **d);
 
 FlowModel* init_FlowModel(LagSolver *wf, WindTurbine *wt);
 void init_FlowModel_set(FlowModel *fm, LagSet *set);
@@ -232,11 +252,17 @@ void update_WakeModel(WakeModel *wm);
 void shed_vel_particle(FlowModel *fm, int i);
 void shed_wake_particle(WakeModel *wm, int i);
 
+// Building dependency matrices
+void build_dep_matrix_ff(LagSolver *wf);
+void build_dep_matrix_ww(LagSolver *wf);
+void build_dep_matrix_wf(LagSolver *wf);
+
 // Flow particle interpolation
 void project_particle_frame_FlowModel(FlowModel *fm, int i, double *x, double *xi, double *r);
-double compute_weight_FlowModel_all(LagSolver *wf, double *x, double* sigma, int i_wt_exclude);
-double compute_weight_FlowModel(FlowModel *fm, double *x, double* sigma);
-void interp_FlowModel_all(LagSolver *fm, double *x, double t, double* sigma, double *u_interp, int i_wt_exclude);
+double compute_weight_FlowModel_all(LagSolver *wf, double *x, double i_sigma, int i_wt_exclude);
+double compute_weight_FlowModel(FlowModel *fm, double *x, int i_sigma);
+void interp_FlowModel_all(LagSolver *fm, double *x, double t, int i_sigma, double *u_interp, int i_wt_exclude);
+void update_FlowModel_bounds(FlowModel *fm);
 
 // Wake particle interpolation
 void project_particle_frame_WakeModel(WakeModel *wm, int i_p, double *x, double *xi, double *r, int side);
@@ -244,6 +270,7 @@ double side_wake_particle(WakeModel *wm, int i_p, double *x);
 int is_interp_wake_particle(WakeModel *wm, int i_p, double *x, double *side);
 int interp_wake_particle(WakeModel *wm, int i_p, int *idx, double *widx, double *side);
 int find_wake_particle(WakeModel *wm, double *x, int *idx, double *w);
+void update_WakeModel_bounds(WakeModel *fm);
 
 // Speed Deficit interpolation
 void regularize_WakeModel(WakeModel *wm);
@@ -261,7 +288,11 @@ void du_part_compute_from_wm(WakeModel *wm, double *x, double *du_interp, double
 
 void du_ravg_pos_compute_from_wf(LagSolver *wf, double *x, double *du_interp, double ravg);
 
-double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor);
+void du_ravg_posf_compute_from_wf(LagSolver *wf, int i_fm, double *x, double *du_interp, double ravg);
+void du_partw_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp);
+
+
+double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor, int comp);
 
 // # TYPE 1 :  Bastankhah 
 // M. Bastankhah and F. Port ́e-Agel. A new analytical model for wind-turbine wakes.
@@ -271,6 +302,14 @@ double du_xi_ravg_BPA(WakeModel *wm, int i, double xi, double ravg);
 double du_xi_r_BPA(WakeModel *wm, int i, double xi, double r);
 void update_BPA(WakeModel *wm, int i);
 
+// Utils
+int intersect(double **a, double **b);
+int in_triangle(double *x, double *a, double *b, double *c);
+int in_quad(double *x, double *a, double *b, double *c, double *d);
+void line_intersect(double mx, double px, double my, double py, double *x);
+
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
+void interp_FlowModel_d(LagSolver *wf, double *x, double t, int i_sigma, double *u_interp, int *d);
 
 #endif // _LagSolver_H_
