@@ -135,17 +135,19 @@ class Turbine:
         --------
         :class:`.Sensors`
         """
+        snrs_args = dict(snrs_args)
+        snrs_type = snrs_args.pop('type')
 
-        if   snrs_args['type']=='SensorsPy':
+        if   snrs_type=='SensorsPy':
             from .sensors import SensorsPy
             snrs_fid = f'{self.farm.data_dir}/sensorsData_{self.i_bf}.npy' 
             self.snrs = SensorsPy(snrs_fid, **snrs_args)
 
-        elif snrs_args['type']=='SensorsPreprocessed':
+        elif snrs_type=='SensorsPreprocessed':
             from .sensors import SensorsPreprocessed
             self.snrs = SensorsPreprocessed(self.i_bf, self.farm.data_dir, **snrs_args)
 
-        elif snrs_args['type']=='SensorsDecoy':
+        elif snrs_type=='SensorsDecoy':
             from .sensors import SensorsDecoy
             self.snrs = SensorsDecoy(**snrs_args)
             
