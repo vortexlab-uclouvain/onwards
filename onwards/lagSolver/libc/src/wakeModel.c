@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-//#include "airfoilLib.h"
 #include "macro.h"  
 #include "lagSolver.h"
 
@@ -168,15 +167,14 @@ void update_WakeModel(WakeModel *wm) {
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 
-    interp_FlowModel_d(wm->wf, wm->x_p[IP2I(wm,wm->n/2)], wm->t_p[IP2I(wm,wm->n/2)], 1, u_f, wm->d_wf); 
+    interp_FlowModel_dep(wm->wf, wm->x_p[IP2I(wm,wm->n/2)], wm->t_p[IP2I(wm,wm->n/2)], 1, u_f, wm->d_wf); 
     for (i = 0; i < wm->n; i++) {
         wm->t_p[i] += wm->dt;
         
-        interp_FlowModel_d(wm->wf, wm->x_p[i], wm->t_p[i], 0, u,   wm->d_wf); 
-
-        du_partw_compute_from_wf(wm->wf, wm, i, du);
+        // interpolating fields
+        interp_FlowModel_dep(wm->wf, wm->x_p[i], wm->t_p[i], 0, u, wm->d_wf); 
+        du_part_compute_from_wf_dep(wm->wf, wm, i, du);
         
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
         du_self_1D = wm->sd->du_xi(wm, i, wm->xi_p[i]);
 
         // Self induced speed deficit

@@ -260,7 +260,7 @@ void build_dep_matrix_wf(LagSolver *wf);
 // Flow particle interpolation
 void project_particle_frame_FlowModel(FlowModel *fm, int i, double *x, double *xi, double *r);
 double compute_weight_FlowModel_all(LagSolver *wf, double *x, double i_sigma, int i_wt_exclude);
-double compute_weight_FlowModel(FlowModel *fm, double *x, int i_sigma);
+double compute_weight_FlowModel(FlowModel *fm, double *x, int skip, double *sigma);
 void interp_FlowModel_all(LagSolver *fm, double *x, double t, int i_sigma, double *u_interp, int i_wt_exclude);
 void update_FlowModel_bounds(FlowModel *fm);
 
@@ -284,12 +284,11 @@ void du_pos2d_compute_from_wf(LagSolver *wf, double *x, double *du_interp);
 void du_pos3d_compute_from_wf(LagSolver *wf, double *x, double *du_interp);
 
 void du_part_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp);
-void du_part_compute_from_wm(WakeModel *wm, double *x, double *du_interp, double ravg);
 
 void du_ravg_pos_compute_from_wf(LagSolver *wf, double *x, double *du_interp, double ravg);
 
 void du_ravg_posf_compute_from_wf(LagSolver *wf, int i_fm, double *x, double *du_interp, double ravg);
-void du_partw_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp);
+void du_part_compute_from_wf_dep(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp);
 
 
 double rews_compute(LagSolver *wf, double *x_c_vec_rotor, double r_rotor, int comp);
@@ -310,6 +309,6 @@ void line_intersect(double mx, double px, double my, double py, double *x);
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
-void interp_FlowModel_d(LagSolver *wf, double *x, double t, int i_sigma, double *u_interp, int *d);
+void interp_FlowModel_dep(LagSolver *wf, double *x, double t, int i_sigma, double *u_interp, int *d);
 
 #endif // _LagSolver_H_

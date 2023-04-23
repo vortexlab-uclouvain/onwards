@@ -162,7 +162,7 @@ double du_xi_ravg_BPA(WakeModel *wm, int i, double xi, double ravg) {
 /*     Speed Deficit Evaluation with Projection     */
 /* ------------------------------------------------ */
 
-void du2_part_compute_from_wm(WakeModel *wm, double *x, double *du_interp, double ravg) {
+void du_part_compute_from_wm(WakeModel *wm, double *x, double *du_interp, double ravg) {
     int *idx_p = wm->idx_;
     double *w_idx_p = wm->widx_;
 
@@ -231,7 +231,7 @@ void du2_pos_compute_from_wm(WakeModel *wm, double *x, double *du_interp,
 }
 /* -- end du_part_compute_from_wm ------------------------------------------- */
 
-void du_partw_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp) {
+void du_part_compute_from_wf_dep(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp) {
     
     double ravg = wm_p->wt->af->R;
 
@@ -244,16 +244,16 @@ void du_partw_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *d
 
     for ( i_wm = 0; i_wm < i_wm_p; i_wm++) {
         if (wf->d_ww[i_wm][i_wm_p]) {
-            du2_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);
+            du_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);
         }
     }
     for ( i_wm = i_wm_p+1; i_wm < wf->n_wt ; i_wm++) {
         if (wf->d_ww[i_wm][i_wm_p]) {
-            du2_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);     
+            du_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);     
         }
     }
 }
-/* -- end du_partw_compute_from_wf ------------------------------------------- */
+/* -- end du_part_compute_from_wf_dep ------------------------------------------- */
 
 void du_part_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du_interp) {
     
@@ -267,10 +267,10 @@ void du_part_compute_from_wf(LagSolver *wf, WakeModel *wm_p, int i_p, double *du
     i_wm_p = wm_p->wt->i_wf;
 
     for ( i_wm = 0; i_wm < i_wm_p; i_wm++) {
-        du2_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);
+        du_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);
     }
     for ( i_wm = i_wm_p+1; i_wm < wf->n_wt ; i_wm++) {
-        du2_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);     
+        du_part_compute_from_wm(wf->wms[i_wm], wm_p->x_p[i_p], du_interp, ravg);     
     }
 }
 /* -- end du_pos_compute_from_wf -------------------------------------------- */
@@ -303,7 +303,7 @@ void du_ravg_pos_compute_from_wf(LagSolver *wf, double *x, double *du_interp, do
     // Deficit induced by other wakes 
     int i_wm;
     for ( i_wm = 0; i_wm < wf->n_wt; i_wm++) {
-        du2_part_compute_from_wm(wf->wms[i_wm], x, du_interp, ravg);
+        du_part_compute_from_wm(wf->wms[i_wm], x, du_interp, ravg);
     }   
 }
 /* -- end du_ravg_pos_compute_from_wf -------------------------------------------- */
@@ -318,7 +318,7 @@ void du_ravg_posf_compute_from_wf(LagSolver *wf, int i_fm, double *x, double *du
     int i_wm;
     for ( i_wm = 0; i_wm < wf->n_wt; i_wm++) {
         if (wf->d_wf[i_wm][i_fm]) {
-            du2_part_compute_from_wm(wf->wms[i_wm], x, du_interp, ravg);
+            du_part_compute_from_wm(wf->wms[i_wm], x, du_interp, ravg);
         }
     }
 }

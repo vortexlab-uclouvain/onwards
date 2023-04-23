@@ -219,58 +219,59 @@ int in_bnds_FlowModel(FlowModel *fm, double *x, int i_sigma) {
 }
 /* -- end in_bnds_FlowModel ------------------------------------------------- */
 
-double compute_weight_FlowModel(FlowModel *fm, double *x, int i_sigma) {
-    int i, skip;
-    double w_skip;//, w_acc;
+double compute_weight_FlowModel(FlowModel *fm, double *x, int skip, double *sigma) {
+    int i;
+    double w_skip, w_acc;
+    w_acc = 0;
 
-    skip   = ( in_bnds_FlowModel(fm, x, i_sigma) ) ? 1 : 5;
     w_skip = fm->n/floor(fm->n/skip);
     
-    // w_acc = 0;
     for ( i = 0; i < fm->n; i+=skip) { 
         project_particle_frame_FlowModel(fm, i, x, fm->xi_, fm->r_);
 
-        fm->w_shep[i] =  ( exp( (- pow(fm->xi_[0]/fm->sigma[i_sigma][0], 2)
-                                 - pow( fm->r_[0]/fm->sigma[i_sigma][1], 2) 
-                                 - pow(fm->t_p[i]/fm->sigma[i_sigma][2], 2))/2.  ) ) ;
-
+        fm->w_shep[i] =  ( exp( (- pow(fm->xi_[0]/sigma[0], 2)
+                                 - pow( fm->r_[0]/sigma[1], 2) 
+                                 - pow(fm->t_p[i]/sigma[2], 2))/2.  ) ) ;
         fm->w_shep[i] += 1e-16;
         fm->w_shep[i] *= w_skip;
-        // w_acc += fm->w_shep[i] ; 
+        w_acc += fm->w_shep[i];
     } 
 
-    return skip;
+    return w_acc;
 }
 /* -- end compute_weight ---------------------------------------------------- */
 
-double interp_FlowModel(FlowModel *fm, double *u_interp, double skip) {
+void interp_FlowModel(FlowModel *fm, double *u_interp, int skip) {
     int i;
-    double w_acc=0;
     for ( i = 0; i < fm->n; i+=skip) { 
         u_interp[0] += fm->w_shep[i] * fm->u_p[i][0];
         u_interp[1] += fm->w_shep[i] * fm->u_p[i][1];
-        w_acc       += fm->w_shep[i];
     } 
-    return w_acc;
 }
-
 /* -- end interp_FlowModel -------------------------------------------------- */
 
+int DEP_SKIP = 5;
+
 void interp_FlowModel_all(LagSolver *wf, double *x, double t, int i_sigma, double *u_interp, int i_wt_exclude) {
-    int i_wt;
-    double w_acc, skip;
+    int i_wt, skip;
+    double w_acc;
+    FlowModel *fm;
     w_acc = 0;
 
     u_interp[0] = 0.0;
     u_interp[1] = 0.0;
 
     for (i_wt = 0;                i_wt < i_wt_exclude; i_wt++) { 
-        skip   = compute_weight_FlowModel(wf->fms[i_wt], x, i_sigma) ;
-        w_acc += interp_FlowModel(wf->fms[i_wt], u_interp, skip);
+        fm = wf->fms[i_wt];
+        skip   = in_bnds_FlowModel(fm, x, i_sigma) ? 1 :DEP_SKIP;
+        w_acc += compute_weight_FlowModel(fm, x, skip, fm->sigma[i_sigma]) ;
+        interp_FlowModel(fm, u_interp, skip);
     }
     for (i_wt = i_wt_exclude + 1; i_wt < wf->n_wt;     i_wt++) { 
-        skip   = compute_weight_FlowModel(wf->fms[i_wt], x, i_sigma) ;
-        w_acc += interp_FlowModel(wf->fms[i_wt], u_interp, skip);
+        fm = wf->fms[i_wt];
+        skip   = in_bnds_FlowModel(fm, x, i_sigma) ? 1 :DEP_SKIP;
+        w_acc += compute_weight_FlowModel(fm, x, skip, fm->sigma[i_sigma]) ;
+        interp_FlowModel(fm, u_interp, skip);
     }
 
     u_interp[0] /= w_acc;
@@ -278,9 +279,9 @@ void interp_FlowModel_all(LagSolver *wf, double *x, double t, int i_sigma, doubl
 }
 /* -- end interp_FlowModel_all ---------------------------------------------- */
 
-void interp_FlowModel_d(LagSolver *wf, double *x, double t, int i_sigma, double *u_interp, int *d) {
-    int i, i_wt;
-    double w_acc, w_skip, skip;
+void interp_FlowModel_dep(LagSolver *wf, double *x, double t, int i_sigma, double *u_interp, int *d) {
+    int i_wt;
+    double w_acc, skip;
     FlowModel *fm;
     w_acc = 0;
 
@@ -288,22 +289,10 @@ void interp_FlowModel_d(LagSolver *wf, double *x, double t, int i_sigma, double 
     u_interp[1] = 0.0;
 
     for (i_wt = 0; i_wt < wf->n_wt; i_wt++) { 
-
         fm = wf->fms[i_wt];
-
-        skip   = d[i_wt] ? 1 : 5;
-        w_skip = fm->n/floor(fm->n/skip);
-        
-        for ( i = 0; i < fm->n; i+=skip) { 
-            project_particle_frame_FlowModel(fm, i, x, fm->xi_, fm->r_);
-
-            fm->w_shep[i] =  ( exp( (- pow(fm->xi_[0]/fm->sigma[i_sigma][0], 2)
-                                     - pow( fm->r_[0]/fm->sigma[i_sigma][1], 2) 
-                                     - pow(fm->t_p[i]/fm->sigma[i_sigma][2], 2))/2.  ) ) ;
-            fm->w_shep[i] += 1e-16;
-            fm->w_shep[i] *= w_skip;
-        } 
-        w_acc += interp_FlowModel(wf->fms[i_wt], u_interp, skip);
+        skip   = d[i_wt] ? 1 : DEP_SKIP;
+        w_acc += compute_weight_FlowModel(fm, x, skip, fm->sigma[i_sigma]);
+        interp_FlowModel(wf->fms[i_wt], u_interp, skip);
     }
 
     u_interp[0] /= w_acc;
