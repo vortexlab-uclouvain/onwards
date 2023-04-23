@@ -113,8 +113,8 @@ class Grid():
         self.dx = self.set.setdefault('dx', 20)
         self.dz = self.set.setdefault('self.dz', 20)
 
-        self._x = np.arange(self.x_bnds[0], self.x_bnds[1]+self.dx, self.dx, dtype=np.float)
-        self._z = np.arange(self.z_bnds[0], self.z_bnds[1]+self.dz, self.dz, dtype=np.float)
+        self._x = np.arange(self.x_bnds[0], self.x_bnds[1]+self.dx, self.dx, dtype=float)
+        self._z = np.arange(self.z_bnds[0], self.z_bnds[1]+self.dz, self.dz, dtype=float)
 
         self.xx, self.zz = np.meshgrid(self._x, self._z, indexing='ij')
         self.mesh = self.xx, self.zz
