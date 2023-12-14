@@ -89,7 +89,7 @@ with Farm(WF_DIR, 'NREL', snrs_args, est_args, model_args) as wf:
     # wf.viz_add('particles')
 
     # 2D hub-height velocity slice animation
-    wf.viz_add('velfield', [3,10], 0)
+    wf.viz_add('velfield', vel_bnds=[3,10], comp=None)
 
     # Plot position of the wake centerline 3D, 6D and 9D behind the wind
     # turbine hub

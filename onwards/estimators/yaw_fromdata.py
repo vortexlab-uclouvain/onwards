@@ -41,11 +41,11 @@ class Est_yaw_fromdata(Estimator):
         :State(s) computed:     * User defined (cfr :meth:`.Est_fld_fromdata.update`)
         """
         meas   = ['yawA']
-        states = ['yaw']
+        states = ['psi']
         req_states = [] 
         super().__init__(wt, meas, states, req_states, avail_states)
 
         self.probe = wt.snrs.get_buffer_data
 
     def update(self):
-        self.wt.states['yaw'] = np.deg2rad(self.probe('yawA'))
+        self.wt.states['psi'] = np.deg2rad(self.probe('yawA'))

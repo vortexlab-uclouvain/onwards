@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 # MINIMAL_STATES contains the estimated wind turbine states s_wt required by the 
 # LagSolver 
-MINIMAL_STATES = [ 'u_inc', 'u_fs', 'w_inc', 'w_fs', 'ct', 'ti', 'yaw' ]
+MINIMAL_STATES = [ 'u_inc', 'u_fs', 'w_inc', 'w_fs', 'ct', 'ti', 'psi']
 
 class Turbine:
     farm : Farm
@@ -135,17 +135,19 @@ class Turbine:
         --------
         :class:`.Sensors`
         """
+        snrs_args = dict(snrs_args)
+        snrs_type = snrs_args.pop('type')
 
-        if   snrs_args['type']=='SensorsPy':
+        if   snrs_type=='SensorsPy':
             from .sensors import SensorsPy
             snrs_fid = f'{self.farm.data_dir}/sensorsData_{self.i_bf}.npy' 
             self.snrs = SensorsPy(snrs_fid, **snrs_args)
 
-        elif snrs_args['type']=='SensorsPreprocessed':
+        elif snrs_type=='SensorsPreprocessed':
             from .sensors import SensorsPreprocessed
             self.snrs = SensorsPreprocessed(self.i_bf, self.farm.data_dir, **snrs_args)
 
-        elif snrs_args['type']=='SensorsDecoy':
+        elif snrs_type=='SensorsDecoy':
             from .sensors import SensorsDecoy
             self.snrs = SensorsDecoy(**snrs_args)
             
@@ -246,8 +248,8 @@ class Turbine:
 
             try: # try to load build-in estimator 
                 module_name = f'onwards.estimators.{e_type}'
-                Estimator = getattr( __import__(module_name, fromlist=['']),
-                                     f'Est_{e_type}')
+                class_name =  f'Est_{e_type}'
+                Estimator = getattr( __import__(module_name, fromlist=['']), class_name)
             except ModuleNotFoundError: # tries to load user-defined estimator 
                 try:                    # (should be available in python path)
                     module_name = f'onwards_estimator_{e_type}'
@@ -324,8 +326,7 @@ class Turbine:
             The position (x, z) of the tip of the turbines blades given the 
             current rotor orientation.
         """        
-        # theta = np.deg2rad(self.states['yaw'])
-        theta = self.states['yaw']
+        theta = self.states['psi']
         tmp = np.array([-1,1]) * self.af.R
         return [ self.x[0] + tmp*np.sin(theta), 
                  self.x[2] + tmp*np.cos(theta) ]

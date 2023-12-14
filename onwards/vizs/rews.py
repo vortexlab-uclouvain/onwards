@@ -121,7 +121,7 @@ class Viz_rews(Viz):
                 self.data['u_fs_mod'][self._it] = self.farm.lag_solver.interp_FlowModel(
                                                                     np.array([self.x_interp[0]]), 
                                                                     np.array([self.x_interp[2]]), 
-                                                                    filt='flow')[0]
+                                                                    filt='rotor')[0]
             self._it += 1
         # -------------------------------------------------------------------- #
     

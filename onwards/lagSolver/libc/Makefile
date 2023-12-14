@@ -2,7 +2,7 @@ CFLAGS = -O3
 
 CC = gcc
 CCLINK = gcc
-OBJ = lagSolver.o flowModel.o wakeModel.o speedDeficit.o communicator.o
+OBJ = utils.o  lagSolver.o flowModel.o wakeModel.o speedDeficit.o communicator.o
 
 ##################################
 

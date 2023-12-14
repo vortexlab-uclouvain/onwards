@@ -113,8 +113,8 @@ class Grid():
         self.dx = self.set.setdefault('dx', 20)
         self.dz = self.set.setdefault('self.dz', 20)
 
-        self._x = np.arange(self.x_bnds[0], self.x_bnds[1]+self.dx, self.dx, dtype=np.float)
-        self._z = np.arange(self.z_bnds[0], self.z_bnds[1]+self.dz, self.dz, dtype=np.float)
+        self._x = np.arange(self.x_bnds[0], self.x_bnds[1]+self.dx, self.dx, dtype=float)
+        self._z = np.arange(self.z_bnds[0], self.z_bnds[1]+self.dz, self.dz, dtype=float)
 
         self.xx, self.zz = np.meshgrid(self._x, self._z, indexing='ij')
         self.mesh = self.xx, self.zz
@@ -163,14 +163,14 @@ class Grid():
             raise ValueError('Filter type not recognized (should be `flow` or `rotor`.')
 
         if filt == 'rotor':
-            return self.lag_solver.interp_FlowModel(*self._mesh_vec)
+            if not self._u_was_updated:
+                self._u_was_updated = True
+                self.lag_solver.interp_FlowModel(*self._mesh_vec, buffer=self._u_vec_buffer, filt='rotor')
+            return self._u_vec_buffer.x
 
         if filt == 'flow':
-            if not self._u_was_updated:
-                self.lag_solver.interp_FlowModel(*self._mesh_vec, buffer=self._u_vec_buffer)
-                self._u_was_updated = True
+            return self.lag_solver.interp_FlowModel(*self._mesh_vec, filt='flow')
 
-            return self._u_vec_buffer.x
 
         # -------------------------------------------------------------------- #
     
@@ -190,15 +190,9 @@ class Grid():
         return self._du_vec_buffer.x        
         # -------------------------------------------------------------------- #
 
-    def u_compute(self, filt='flow') -> np.array:
+    def u_compute(self) -> np.array:
         """ 
         Interpolates the flow model over the Grid.
-
-        Parameters
-        ----------
-        filt : str, optional
-            ``flow`` or ``rotor`` depending on the width of the filter used for
-            the ambient velocity field computation, by default ``flow``.
 
         Returns
         -------
@@ -206,6 +200,6 @@ class Grid():
             The ambient flow field interpolated at the grid locations.
         """
 
-        return (  self.u_fm_compute(filt=filt)
+        return (  self.u_fm_compute(filt='rotor')
                 - self.du_wm_compute()                              )
         # -------------------------------------------------------------------- #

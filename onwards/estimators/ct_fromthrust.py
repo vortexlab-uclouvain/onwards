@@ -48,13 +48,13 @@ class Est_ct_fromthrust(Estimator):
         """
         meas   = ['T']
         states = ['ct']
-        req_states = ['u_inc', 'yaw'] 
+        req_states = ['u_inc'] 
         super().__init__(wt, meas, states, req_states, avail_states)
         # -------------------------------------------------------------------- #
 
     def update(self):
         ct_loc = self.wt.snrs.get_buffer_data('T') \
-                        / (self.wt.states['u_inc']**2 * self.wt.af.cCTfac) * np.cos(self.wt.states['yaw'])
+                        / (self.wt.states['u_inc']**2 * self.wt.af.cCTfac)
                         
         if ct_loc > CT_LIM: 
             # limit as defined by Moriarty PJ, Hansen AC. Aerodyn theory manual. tech. rep., Golden, CO (US), National Renewable Energy Lab.; 2005.

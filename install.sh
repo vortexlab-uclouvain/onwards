@@ -4,7 +4,7 @@ echo "| |  | |_ _\ \  /\  / /_ _| |__) | |  | | (___  "
 echo "| |  | | '_ \ \/  \/ / _' |  _  /| |  | |\___ \ "
 echo "| |__| | | | \  /\  / (_| | | \ \| |__| |____) |"
 echo " \____/|_| |_|\/  \/ \__,_|_|  \_\_____/|_____/ "
-echo "Maxime Lejeune - UCLouvain - 26.09.2022     v1.1"
+echo "Maxime Lejeune - UCLouvain - 14.12.2023     v1.2"
 echo ""
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
