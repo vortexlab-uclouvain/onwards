@@ -10,8 +10,8 @@ Quick start
 ``install.sh`` will guide you through the installation process (set up environment variables and compile sources).
 
 ```bash:
-git clone git@git.immc.ucl.ac.be:lejeunemax/OnWaRDS.git
-cd OnWaRDS
+git clone git@github.com:vortexlab-uclouvain/onwards.git
+cd onwards
 source install.sh
 ```
 
@@ -29,7 +29,7 @@ python 00_sandbox.py
 
 Documentation
 -------------
-Documentation available [here](https://lejeunemax.git-page.immc.ucl.ac.be/OnWaRDS/).
+Documentation available [here](https://onwards.git-page.immc.ucl.ac.be/onwards).
 
 Reference data
 --------------
@@ -43,6 +43,8 @@ Publications
 [\[2\]](https://doi.org/10.1088/1742-6596/2265/2/022018) M. Lejeune, M. Moens, and P. Chatelain. *Extension and validation of an operational dynamic wake model to yawed configurations*. Journal of Physics: Conference Series, 2265(2):022018, may 2022.
 
 [\[3\]](https://doi.org/10.1088/1742-6596/1618/6/062055) M. Lejeune, M. Moens, M. Coquelet, N. Coudou, and P. Chatelain. *Data assimilation for the prediction of wake trajectories within wind farms*. Journal of Physics: Conference Series, 1618:062055, sep 2020.
+
+[\[3\]](http://hdl.handle.net/2078.1/275067) M. Lejeune. *A meandering-capturing wake model coupled to rotor-based flow-sensing for operational wind farm flow estimation*. PhD thesis, UCLouvain, 2023.
 
 How to cite
 -----------
