@@ -139,8 +139,8 @@ class Viz_centerline_xloc(Viz_centerline):
                                      zc_ref_up, 
                                      color=[0.7,0.7,0.7] )
 
-                    if self.diag:
-                        T0 = 250
+                    T0 = 250
+                    if self.diag and t_mod[-1]>T0:
                         idx_t_mod_diag = np.where(t_mod>T0)[0][0]
 
                         v0 = normy(self.data_get( 'zc', 'mod', i_wt=i_wt,                              ))[idx_t_mod_diag:,idx_x]

@@ -235,6 +235,9 @@ void free_WakeModel(WakeModel *fm);
 SpeedDeficit* init_SpeedDeficit(WakeModel *wm);
 void free_SpeedDeficit(SpeedDeficit *sd);
 
+void init_FlowModel_states_from_restart(FlowModel *fm, int n, int it, int i0, double *t_p, double *xi_p, double *x_p, double *u_p);
+void init_FlowModel_states_from_restart_all(LagSolver *wf, int n_wt, int *n, int *it, int *i0, double **t_p, double **xi_p, double **x_p, double **u_p);
+
 // Flow and Wake Model getters
 FlowModel* get_FlowModel(LagSolver *wf, WindTurbine *wt);
 WakeModel* get_WakeModel(LagSolver *wf, WindTurbine *wt);

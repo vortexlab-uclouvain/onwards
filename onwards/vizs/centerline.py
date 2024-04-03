@@ -81,7 +81,7 @@ class Centerline:
 
             rank = 0
             time = data[range(rank,rank+(nTS-1)*nSteps+1,nSteps)]
-            if time_zero_origin: time = time-time[0]
+            time = time-time[0]*time_zero_origin
             rank += 1
 
             sigma, y, z = (np.zeros((nTS,nx)) for i in range(3))
@@ -111,7 +111,7 @@ try:
 except ImportError: 
     lg.info('ReadCenterlineForWM not available: using local implementation.')
 
-I_MASK = 1
+I_MASK = 0
 
 class Viz_centerline(Viz):
     viz_type = 'centerline'
@@ -204,7 +204,7 @@ class Viz_centerline(Viz):
 
                     # n_mask masks are available for each wake tracked
                     wms = [ Centerline( f'{fid_paths[i]}_w{wt.i_bf:02d}_{it0}', 
-                                        mask_type= fid_gmasks[i] ) 
+                                        mask_type= fid_gmasks[i], time_zero_origin= (wt.snrs.t0!=0) ) 
                            for i in self.i_masks ]
                     
                     # initializing data

@@ -85,7 +85,7 @@ class Turbine:
         self.__init_states__(est_args)
         # -------------------------------------------------------------------- #
 
-    def reset(self, ini_states: dict[str, float]={}):       
+    def reset(self, ini_states: dict[str, float]={}, ini_time: float = None):       
         """ Reset the wind turbines.
 
         Parameters
@@ -96,7 +96,7 @@ class Turbine:
         """        
 
         # Reset sensors
-        self.snrs.reset()
+        self.snrs.reset(time=ini_time)
         self.t = self.snrs.get_buffer_data('time')
 
         # Reset estimators and associated states
@@ -153,12 +153,12 @@ class Turbine:
             
         else:       # tries to load user-defined estimator 
             try:    # (should be available in python path)
-                module_name = f'onwards_sensors_{snrs_args["type"]}'
-                Sensors = getattr(__import__(module_name), f'Sensors_{snrs_args["type"]}')
+                module_name = f'onwards_sensors_{snrs_type}'
+                Sensors = getattr(__import__(module_name), f'Sensors_{snrs_type}')
                 self.snrs = Sensors(self.i_bf, self.farm.data_dir, **snrs_args)
 
             except (ModuleNotFoundError, AttributeError) as er:
-                raise Exception(f'Sensors type {snrs_args["type"]} not recognized: {er}')
+                raise Exception(f'Sensors type {snrs_type} not recognized: {er}')
 
         self.fs   = self.snrs.fs
         self.t    = self.snrs.get_buffer_data('time')
@@ -248,8 +248,8 @@ class Turbine:
 
             try: # try to load build-in estimator 
                 module_name = f'onwards.estimators.{e_type}'
-                Estimator = getattr( __import__(module_name, fromlist=['']),
-                                     f'Est_{e_type}')
+                class_name =  f'Est_{e_type}'
+                Estimator = getattr( __import__(module_name, fromlist=['']), class_name)
             except ModuleNotFoundError: # tries to load user-defined estimator 
                 try:                    # (should be available in python path)
                     module_name = f'onwards_estimator_{e_type}'
@@ -326,7 +326,6 @@ class Turbine:
             The position (x, z) of the tip of the turbines blades given the 
             current rotor orientation.
         """        
-        # theta = np.deg2rad(self.states['psi'])
         theta = self.states['psi']
         tmp = np.array([-1,1]) * self.af.R
         return [ self.x[0] + tmp*np.sin(theta), 

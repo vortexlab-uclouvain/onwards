@@ -110,6 +110,37 @@ void init_WakeModel_states(WakeModel *wm) {
 }
 /* -- end init_WakeModel_states --------------------------------------------- */
 
+void init_WakeModel_states_from_restart(WakeModel *wm, int n, int it, int i0, double *t_p, double *xi_p, double *ct_p, double *psi_p, double *x_p, double *uinc_p) {
+    if (n!=wm->n)
+        printf("ERROR: the number of particle is inconsistent (%i states required but restart contains %i states).\n", wm->n, n);
+
+    wm->i0 = i0; 
+    wm->it = it;
+    wm->dt = wm->set->dt;
+
+    int i;
+    for (i = 0; i < wm->n; i++) {
+        wm->t_p[i]  = t_p[i];
+        wm->xi_p[i] = xi_p[i];
+        wm->ct_p[i] = ct_p[i];
+        wm->ti_p[i] = psi_p[i];
+        wm->ct_p[i] = ct_p[i];
+
+        
+        wm->x_p[i][0] = x_p[i];
+        wm->x_p[i][1] = x_p[i+wm->n];
+        
+        wm->uinc_p[i][0] = uinc_p[i];
+        wm->uinc_p[i][1] = uinc_p[i+wm->n];
+
+        wm->n_p[i][0]  = cos( wm->psi_p[i]);       wm->n_p[i][1]  = -sin( wm->psi_p[i]);
+        wm->n2_p[i][0] = POW2WSIGN(wm->n_p[i][0]); wm->n2_p[i][1] = POW2WSIGN(wm->n_p[i][1]);
+
+        wm->sd->update(wm, i);
+    }
+}
+/* -- end init_WakeModel_states_from_restart -------------------------------- */
+
 void free_WakeModel(WakeModel *wm) {  
     int i;
     for (i = 0; i < wm->n; i++) {

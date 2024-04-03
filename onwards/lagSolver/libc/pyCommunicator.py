@@ -24,6 +24,7 @@ import ctypes
 import numpy as np
 
 from ctypes import POINTER, pointer, c_int, c_double, c_char
+c_int_p = POINTER(c_int) 
 c_double_p = POINTER(c_double) 
 c_double_pp = POINTER(c_double_p) 
 c_double_ppp = POINTER(c_double_pp) 
@@ -251,6 +252,14 @@ get_FlowModel = _ls_lib.get_FlowModel
 _ls_lib.get_WakeModel.argtypes = [c_LagSolver_p, c_Turbine_p]
 _ls_lib.get_WakeModel.restype  = c_WakeModel_p
 get_WakeModel = _ls_lib.get_WakeModel
+
+_ls_lib.init_FlowModel_states_from_restart.argtypes = [c_FlowModel_p, c_int, c_int, c_int, c_double_p, c_double_p, c_double_p, c_double_p]
+_ls_lib.init_FlowModel_states_from_restart.restype  = None
+init_FlowModel_states = _ls_lib.init_FlowModel_states_from_restart
+
+_ls_lib.init_WakeModel_states_from_restart.argtypes = [c_WakeModel_p, c_int, c_int, c_int, c_double_p, c_double_p, c_double_p, c_double_p, c_double_p, c_double_p]
+_ls_lib.init_WakeModel_states_from_restart.restype  = None
+init_WakeModel_states = _ls_lib.init_WakeModel_states_from_restart
 
 # Free memory
 _ls_lib.free_LagSolver.argtypes = [c_LagSolver_p]

@@ -125,6 +125,31 @@ void init_FlowModel_states(FlowModel *fm) {
 }
 /* -- end init_FlowModel_states --------------------------------------------- */
 
+void init_FlowModel_states_from_restart(FlowModel *fm, int n, int it, int i0, double *t_p, double *xi_p, double *x_p, double *u_p) {
+    if (n!=fm->n)
+        printf("ERROR: the number of particle is inconsistent (%i states required but restart contains %i states).\n", fm->n, n);
+
+    fm->i0 = i0; 
+    fm->it = it;
+    fm->dt = fm->set->dt;
+
+    int i;
+    for (i = 0; i < fm->n; i++) {
+        fm->t_p[i]  = t_p[i];
+        fm->xi_p[i] = xi_p[i];
+        
+        fm->x_p[i][0] = x_p[i];
+        fm->x_p[i][1] = x_p[i+fm->n];
+        
+        fm->u_p[i][0] = u_p[i];
+        fm->u_p[i][1] = u_p[i+fm->n];
+        
+        fm->uf_p[i][0] = fm->u_p[i][0];
+        fm->uf_p[i][1] = fm->u_p[i][1];
+    }
+}
+/* -- end init_FlowModel_states_from_restart -------------------------------- */
+
 void free_FlowModel(FlowModel *fm) {
     int i,j;
     

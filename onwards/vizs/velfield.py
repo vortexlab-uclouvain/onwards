@@ -111,7 +111,8 @@ class Viz_velfield(Viz):
         vel_bnds : list
             User defined velocity bounds for plotting [ms-1].
         comp : int
-            Velocity field component to be plotted.
+            Velocity field component to be plotted if None, magnitude 
+            is plotted, by default 0. 
         data_fid : str, optional
             Path to the LES 2D fields data.
         mp4_export : bool, optional
@@ -210,18 +211,6 @@ class Viz_velfield(Viz):
                                   extent=[*[x/af_d for x in self.grid.x_bnds],
                                          *[z/af_d for z in self.grid.z_bnds]], 
                                  **self.im_args)
-        
-        self.plt_bnds_f = [None]*self.farm.n_wts
-        self.plt_bnds_w = [None]*self.farm.n_wts
-        for i_wt in range(self.farm.n_wts):
-            comp_domain = self.farm.lag_solver.get_bounds('F',i_wt, i_sigma=1)
-            self.plt_bnds_f[i_wt] = plt.plot( [comp_domain[0][0] for i in range(-1,4)],
-                                              [comp_domain[0][1] for i in range(-1,4)], 'k' )
-            
-            comp_domain = self.farm.lag_solver.get_bounds('W',i_wt)
-            self.plt_bnds_w[i_wt] = plt.plot( [comp_domain[i][0] for i in range(-1,4)],
-                                              [comp_domain[i][1] for i in range(-1,4)], 'k--' )
-
         self.plt_wt_mod = self._set_layout(plt.gca(), self.im_mod, skip_x=bool(data_fid))
 
         # AX1: reference data plot
@@ -253,6 +242,7 @@ class Viz_velfield(Viz):
 
         if self.n_ax==1:
             plt.subplots_adjust(left=0.1, right=0.8, bottom=0.25, top=0.8)
+        
         # Updating data
         self.update()
 
@@ -266,8 +256,7 @@ class Viz_velfield(Viz):
                 self.slice_acc_ref = np.zeros_like(uu_ref)
 
             if 'yawA' in self.farm.wts[0].snrs:
-                np.save(f'{self.slice_dir}/psi.npy',[self.farm.wts[0].snrs['time'], [np.deg2rad(wt.snrs['yawA']) for wt in self.farm.wts]]) 
-
+                np.savez(f'{self.slice_dir}/psi.npy',time=self.farm.wts[0].snrs['time'], yawA=[np.deg2rad(wt.snrs['yawA']) for wt in self.farm.wts]) 
         # -------------------------------------------------------------------- #
     
     def __init_ref__(self, data_fid: str):
@@ -357,15 +346,6 @@ class Viz_velfield(Viz):
         self.im_mod.set_data(np.rot90(uu_mod))
         self._layout_update(self.plt_wt_mod)
 
-        for i_wt, (p_f, p_w) in enumerate(zip(self.plt_bnds_f, self.plt_bnds_w)):
-            comp_domain = self.farm.lag_solver.get_bounds('F',i_wt, i_sigma=0)
-            p_f[0].set_xdata([comp_domain[1][0]/self.farm.af.D for i in range(-1,4)])
-            p_f[0].set_ydata([comp_domain[1][1]/self.farm.af.D for i in range(-1,4)])
-
-            comp_domain = self.farm.lag_solver.get_bounds('W',i_wt)
-            p_w[0].set_xdata([comp_domain[i][0]/self.farm.af.D    for i in range(-1,4)])
-            p_w[0].set_ydata([comp_domain[i][1]/self.farm.af.D    for i in range(-1,4)])
-
         if self.data_fid:
             uu_ref = self.fld_getter(self.farm.t)
             self.im_ref.set_data(np.rot90(uu_ref[self.ref_map]))
@@ -399,6 +379,10 @@ class Viz_velfield(Viz):
         # -------------------------------------------------------------------- #
 
     def _data_clean(self, *args, **kwargs):
+
+        if self._frame_id==0:
+            lg.warning('No slice was exported: mp4 export aborted.')
+            return 
        
         if self.slice_dir:
             np.save(f'{self.slice_dir}/u_mod_avg.npy', 
@@ -406,8 +390,6 @@ class Viz_velfield(Viz):
             if self.data_fid: 
                 np.save(f'{self.slice_dir}/u_ref_avg.npy', 
                                      np.array(self.slice_acc_ref/self._frame_id) )
-            
-
 
         if not self.mp4_dir: 
             return
@@ -421,7 +403,7 @@ class Viz_velfield(Viz):
                      + f' -vcodec mpeg4 -y {self.__dirgen__()}/{out_name}.mp4'
                      + f'> {self.__dirgen__()}/ffmpeg.log 2>&1 ')
             
-            # os.system( f'convert {self.mp4_dir}/*.png {self.__dirgen__()}/{out_name}.gif' )
+            os.system( f'convert {self.mp4_dir}/*.png {self.__dirgen__()}/{out_name}.gif' )
 
             for fid in os.listdir(self.mp4_dir): os.remove(f'{self.mp4_dir}/{fid}')
             os.rmdir(self.mp4_dir)

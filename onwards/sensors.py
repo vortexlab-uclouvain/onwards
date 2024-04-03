@@ -51,7 +51,7 @@ class Sensors():
         raise NotImplementedError
         # -------------------------------------------------------------------- #
 
-    def reset(self):
+    def reset(self, time: float = None):
         """ 
         Reset the Sensors to its initial state.
         """            
@@ -139,7 +139,7 @@ class SensorsPy(Sensors):
 
         References
         ----------
-            .. [1]  M. Moens, M. Duponcheel, G. Winckelmans, and P. Chatelain. An actuator disk method with tip-loss correction based on local effective upstream velocities. Wind Energy, 21(9):766–782, 2018.
+            .. [1]  M. Moens, M. Duponcheel, G. Winckelmans, and P. Chatelain. An actuator disk method with tip-loss correction based on local effective upstream velocities. Wind Energy, 21(9):766-782, 2018.
         """        
         lg.info('Initializing the sensors')
 
@@ -147,7 +147,7 @@ class SensorsPy(Sensors):
 
         data = np.load(data_path, allow_pickle=True).item()
 
-        self.t0     = (not zero_origin) * data['time'][0]
+        self.t0     = (zero_origin) * data['time'][0]
         self.time   = data['time'] - self.t0
         self.n_time = self.time.shape[0]
         self.fs     = fs or 1/(self.time[1]-self.time[0])
@@ -169,7 +169,6 @@ class SensorsPy(Sensors):
                 raise KeyError(f"Data has no '{fld}' field available.")
             lg.debug( 'Importing field %s', fld)
             self.data[fld] = data['data'][fld]
-
 
         # Resample data
         if fs:  self.interp(fs=fs, time_bnds=time_bnds)
@@ -239,8 +238,8 @@ class SensorsPy(Sensors):
                                         + (( _y[i_t+1] ) - _dydx * (_x[i_t+1] - _x[i_t]))%C2TPI ))
                 _y %= C2TPI
 
-    def reset(self):
-        self._buffer_it = 0
+    def reset(self, time: float = None):
+        self._buffer_it = 0 if time is None else np.argmin(np.abs(self.time-time))
         # -------------------------------------------------------------------- #
 
     def iterate(self):
@@ -316,6 +315,11 @@ class SensorsPreprocessed(SensorsPy):
 
         self.data   = np.load(self.data_path, allow_pickle=True)[()]
 
+        # Ensures compatibility with previous OnWaRDS versions
+        if ('psi' not in self.data) and ('yaw' in self.data):
+            self.data['psi'] = self.data.pop('yaw')
+            lg.warning(' Legacy mode activated: yaw renamed to psi')
+
         self.t0     = self.data.pop('t0')
         self.fs     = self.data.pop('fs')
 
@@ -338,8 +342,8 @@ class SensorsDecoy(Sensors):
         self._buffer_it = 0
         # -------------------------------------------------------------------- #
 
-    def reset(self):
-        self._buffer_it = 0
+    def reset(self, time: float = None):
+        self._buffer_it = 0 if time is None else np.argmin(np.abs(self.time-time))
         # -------------------------------------------------------------------- #
         
     def iterate(self):

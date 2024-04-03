@@ -110,10 +110,9 @@ class Viz():
         """ 
         Cleans the Viz data (wrapper for ``_data_clean``)
         """        
-        pass
         if not self._was_clean:
             self._was_clean = True
-            return self._data_clean()
+            self._data_clean()
         # -------------------------------------------------------------------- #
 
     def data_get(self, *args, **kwargs):

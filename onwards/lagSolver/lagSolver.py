@@ -29,7 +29,7 @@ from .grid import Grid
 from .libc import pyCommunicator as py_comm
 
 if TYPE_CHECKING:
-    from typing   import List
+    from typing   import List, Union
     from farm     import Farm
     from sensors  import Sensors
     from turbine  import Turbine
@@ -41,11 +41,29 @@ def _IN2VEC(*args):
 
 _FILT2INT = {'rotor': 0, 'flow': 1}
 
+_RST_MAP = { 'F' : [('n'     , 0),
+                    ('it'    , 0),
+                    ('i0'    , 0),
+                    ('t_p'   , 1),
+                    ('xi_p'  , 1),
+                    ('x_p'   , 2),
+                    ('u_p'   , 2), ],
+             'W' : [('n'     , 0),
+                    ('it'    , 0),
+                    ('i0'    , 0),
+                    ('t_p'   , 1),
+                    ('xi_p'  , 1),
+                    ('ct_p'  , 1),
+                    ('ti_p'  , 1),
+                    ('x_p'   , 2),
+                    ('uinc_p', 2), ] }
+
 class LagSolver():
     farm: Farm
     grid: Grid
     fms:  List(py_comm.c_FlowSolver_p)
     wms:  List(py_comm.c_WakeModel_p)
+    data_p: dict(str, Union[py_comm.c_FlowModel_p, py_comm.c_WakeModel_p])
 
     def __init__(self, farm: Farm, model_args: dict, grid_args: dict = {}):
         r""" Inits a LagSolver object.
@@ -164,7 +182,7 @@ class LagSolver():
         self.grid = False if not grid_args['enable'] else Grid(self, grid_args)
         # -------------------------------------------------------------------- #
 
-    def reset(self, model_args_new):
+    def reset(self, model_args_new:dict, rst:dict = {}):
         """ Resets the flow states to the initial configuration and updates the 
         Lagrangian flow model parameters.
 
@@ -183,6 +201,8 @@ class LagSolver():
 
         self._set_c_.update(model_args_new, self.set)
         py_comm.reset_LagSolver(self.p)
+
+        self.init_from_restart(rst)
         # -------------------------------------------------------------------- #
 
     def update(self):
@@ -223,8 +243,55 @@ class LagSolver():
         py_comm.free_LagSolver(self.p)
         # -------------------------------------------------------------------- #
 
-    def get(self, model: str, field: str, comp: int = None, i_wt: int = None) -> np.array:
-        """_summary_
+    def _get_particles(self, model_p: Union[py_comm.c_FlowModel_p, py_comm.c_WakeModel_p], 
+                             field: str, i_wt_list: List[int], 
+                             comp: int = None, i0_offset: bool = True, split: bool = False) -> np.array:
+        
+        is_vec = any(s == field for s in ['u_p', 'uf_p', 'uinc_p', 'x_p'])
+        if comp is None:
+            if is_vec:
+                raise ValueError(f'Invalid component index ({field}).')
+        else:
+            if not is_vec :
+                raise ValueError(f'comp = {comp} not available for scalar data.')
+            if not comp < 2:
+                raise ValueError(f'Invalid component index ({field}, comp = {comp} < 2).')
+
+        buffer = np.empty(sum(model_p[i_wt].contents.n for i_wt in i_wt_list))
+
+        for i, i_wt in enumerate(i_wt_list):
+            data = model_p[i_wt].contents
+
+            i0 = data.i0 * i0_offset
+            n  = data.n
+    
+            if comp is not None:
+                buffer[i*n:(i+1)*n] = ( [getattr(data, field)[i][comp] for i in range(i0,n)]
+                                      + [getattr(data, field)[i][comp] for i in range(0,i0)] )
+            else:
+                buffer[i*n:(i+1)*n] = ( getattr(data, field)[i0:n]
+                                      + getattr(data, field)[0:i0] )
+        if split:
+            return list(buffer.reshape(len(i_wt_list), -1))
+        else:
+            return buffer
+        # -------------------------------------------------------------------- #
+
+    def _get_params(self, model_p: Union[py_comm.c_FlowModel_p, py_comm.c_WakeModel_p], 
+                             field: str, i_wt_list: List[int])  -> List:
+        buffer = [None]*len(i_wt_list)
+        for i, i_wt in enumerate(i_wt_list):
+            data = getattr(model_p[i_wt].contents, field)
+            if not isinstance(data, (int, float)):
+                raise AttributeError('Field {field} not supported.')
+            buffer[i] = data
+            
+        return buffer
+        # -------------------------------------------------------------------- #
+
+    def get(self, model: str, field: str, comp: int = None, i_wt: int = None, 
+                    i0_offset: bool = True, split: bool = False) -> np.array:
+        """ Extract the model data from the c LagSolver object
 
         Parameters
         ----------
@@ -238,7 +305,12 @@ class LagSolver():
         i_wt : int, optional
             Index of the Turbine data should be extracted from if None (by default
             data is extracted from all turbines.
-
+        i0_offset : bool, optional
+            If True (by default), the i0 offset is removed and data is shifted 
+            accordingly.
+        i0_offset : bool, optional
+            If True the output array is splitted into a len(i_wt) list, by default False.
+        
         Returns
         -------
         np.array
@@ -259,33 +331,33 @@ class LagSolver():
         if model not in ['W', 'F']:
             raise ValueError(f'Inconsistent model type ({model}).')
 
-        is_vec = any(s in field for s in ['u', 'x'])
-        if comp is None and is_vec :
-            raise ValueError(f'Invalid component index ({field}).')
-        if comp is not None and not is_vec :
-            raise ValueError(f'comp = {comp} not available for scalar data.')
-        
-
         i_wt_list = [i_wt] if i_wt is not None else range(self.farm.n_wts)
         if self.farm.n_wts<i_wt_list[0]:
             raise ValueError(f'Invalid turbine index ({i_wt}<{self.farm.n_wts}).')
 
-        i0 = self.data_p[model][0].contents.i0
-        n  = self.data_p[model][0].contents.n
+        model_p = self.data_p[model]
 
-        buffer = np.empty(n*len(i_wt_list))
+        if field.endswith('_p'):
+            return self._get_particles(model_p, field, i_wt_list, comp = comp, i0_offset = i0_offset, split = split)
+        else:
+            return self._get_params(model_p, field, i_wt_list)
 
-        for i, i_wt in enumerate(i_wt_list):
-            data = self.data_p[model][i_wt].contents
-
-            if comp is not None:
-                buffer[i*n:(i+1)*n] = ( [getattr(data, field)[i][comp] for i in range(i0,n)]
-                                      + [getattr(data, field)[i][comp] for i in range(0,i0)] )
-            else:
-                buffer[i*n:(i+1)*n] = ( getattr(data, field)[i0:n]
-                                      + getattr(data, field)[0:i0] )
-        return buffer
         # -------------------------------------------------------------------- #
+
+    def get_WakeModel(self, *args, **kwargs) -> np.array:
+        """ 
+        Proxy for :meth:`.LagSolver.get`( 'W', ... ) 
+        """
+        return self.get('W', *args, **kwargs) 
+        # -------------------------------------------------------------------- #
+
+    def get_FlowModel(self, *args, **kwargs) -> np.array:
+        """ 
+        Proxy for :meth:`.LagSolver.get`( 'F', ... ) 
+        """
+        return self.get('F', *args, **kwargs) 
+        # -------------------------------------------------------------------- #
+
 
     def get_part_iwt(self, model: str) -> np.array:
         """ Computes the mapping between the :meth:`.LagSolver.get`
@@ -464,4 +536,42 @@ class LagSolver():
             return [self.data_p['W'][i_wt].contents.bounds[i][0:2] for i in range(4)]
         else:
             raise ValueError(f'Inconsistent model type ({model}).')
+        # -------------------------------------------------------------------- #
+
+    def get_restart(self, rst: dict = {}) -> None:
+        for model in ['F', 'W']:
+            rst[model] = dict()
+
+            for (field, field_type) in _RST_MAP[model]:
+                
+                if field_type in [0,1]:
+                    rst[model][field]  = self.get(model, field, i0_offset=False, split=True)            
+                elif field_type in [2]:
+                    rst[model][field] = np.swapaxes( np.array( [ self.get(model, field, comp=0, i0_offset=False, split=True), 
+                                                                 self.get(model, field, comp=1, i0_offset=False, split=True) ] ), 0, 1 )          
+                else:
+                    raise Exception('Unkonwn field type')
+        return rst
+        # -------------------------------------------------------------------- #
+
+    def init_from_restart(self, rst:dict, i_wt:List[int]=None) -> None:
+    
+        i_wt_list = list(range(self.farm.n_wts)) if i_wt is None else i_wt
+
+        for model, rst_m in rst.items():
+            for i, i_wt in enumerate(i_wt_list):
+            
+                buffer = [None]*len(_RST_MAP[model])
+                
+                for i_b, (field, _) in enumerate(_RST_MAP[model]):
+                    if field.endswith('_p'):
+                        buffer[i_b] = py_comm.Vec(rst_m[field][i].flatten()).p
+                    else:
+                        buffer[i_b] = rst_m[field][i]
+
+                if model == 'F':
+                    py_comm.init_FlowModel_states(self.data_p['F'][i_wt], *buffer)
+
+                if model == 'W':
+                    py_comm.init_WakeModel_states(self.data_p['W'][i_wt], *buffer)
         # -------------------------------------------------------------------- #

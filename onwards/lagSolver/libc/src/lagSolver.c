@@ -220,3 +220,15 @@ void build_dep_matrix_wf(LagSolver *wf) {
     for (i = 0; i < wf->n_wt; i++) { wf->d_wf[i][i] = 1; }
 }
 /* -- end build_dep_matrix_wf ----------------------------------------------- */
+
+void init_FlowModel_states_from_restart_all(LagSolver *wf, int n_wt, int *n, int *it, int *i0, double **t_p, double **xi_p, double **x_p, double **u_p) {
+    if (n_wt!=wf->n_wt)
+        printf("ERROR: the number of wind turbine is inconsistent (simulation contains %i wind turbines but restart contains %i).\n", wf->n_wt, n_wt);
+
+    int i_wt;
+    for (i_wt = 0; i_wt < wf->n_wt; i_wt++) {
+        init_FlowModel_states_from_restart( wf->fms[i_wt], n[i_wt], it[i_wt], i0[i_wt], 
+                                            t_p[i_wt], xi_p[i_wt], x_p[i_wt], u_p[i_wt] );
+    }
+}
+/* -- end init_FlowModel_states_from_restart_all ---------------------------- */

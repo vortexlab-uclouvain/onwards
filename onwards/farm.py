@@ -361,7 +361,7 @@ class Farm:
         self.it += 1
         # -------------------------------------------------------------------- #
 
-    def reset(self, model_args: dict, ini_states: dict[str, float]={}):
+    def reset(self, model_args: dict, rst: dict={}):
         """ Resets the wind turbines and flow states to the initial configuration 
         and updates the Lagrangian flow model parameters.
 
@@ -377,12 +377,15 @@ class Farm:
         model_args   = LoggingDict(model_args)
 
         # Resetting turbines sensors and states estimators
-        for wt in self.wts: wt.reset(ini_states=ini_states)
+        for i_wt, wt in enumerate(self.wts): 
+            buffer = rst.get('turbine_states', {})
+            wt.reset(ini_states=buffer.get(i_wt, {}), ini_time=rst.get('time', None))
+
         self.it = 0
         self.t  = self.wts[0].t
 
         # Resetting Lagrangian flow model
-        self.lag_solver.reset(model_args)
+        self.lag_solver.reset(model_args, rst=rst.get('lag_solver_states',{}))
 
         self.update_states_flag    = False
         self.update_LagSolver_flag = False
@@ -439,6 +442,7 @@ class Farm:
         # -------------------------------------------------------------------- #
 
     def __exit__(self, exc_type, exc_value, traceback):
+
         for wt in self.wts: wt.__exit__()
         self.lag_solver.free() # free c data
         
@@ -453,4 +457,14 @@ class Farm:
     def export_geo(self):
         if self.out_dir:
             np.save(f'{self.out_dir}/geo.npy', self.x_wts)
+        # -------------------------------------------------------------------- #
+
+    def get_restart(self) -> None:
+        rst = dict()
+        
+        rst['time']              = self.t
+        rst['turbine_states']    = {i_wt : wt.states.copy() for i_wt, wt in enumerate(self.wts)}
+        rst['lag_solver_states'] = self.lag_solver.get_restart()
+
+        return rst
         # -------------------------------------------------------------------- #
